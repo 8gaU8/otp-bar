@@ -1,0 +1,1 @@
+This folder should be placed at `$HOME/.config/otp-cli/`
