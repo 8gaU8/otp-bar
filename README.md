@@ -1,7 +1,46 @@
-# Tauri + Vanilla TS
+# OTP Bar
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+A menu bar application for one time passwords
 
-## Recommended IDE Setup
+## Requirements
+- OATH Toolkit
+  - install with commands:
+    ```bash
+    brew install coreutils oath-toolkit
+    ```
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Configurations
+
+### Structure
+
+```
+$HOME/.config/otp-bar
+├── config.json
+├── token1
+├── token2
+├── token3
+.
+.
+```
+
+### `config.json`
+- Create a config file at `$HOME/.config/otp-bar/config.json`
+- Example:
+    ```json
+    {
+        "oathtoolExecutablePath": "/opt/homebrew/bin/oathtool"
+    }
+    ```
+
+### Token files
+- Save token as a plain text file under `$HOME/.config/otp-bar/`
+- Example:
+```
+$ cat token1
+***YOURTOKEN1**
+$ cat token2
+***YOURTOKEN2**
+```
+  
+## Installation
+Download from a release page
