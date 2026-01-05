@@ -1,6 +1,6 @@
-import { readToken } from "./config.ts";
-import { runOTP } from "./command.ts";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { runOTP } from "./command.ts";
+import { readToken } from "./config.ts";
 
 export const clipOTP = async (clipID: string) => {
   const token = await readToken(clipID);

@@ -1,8 +1,8 @@
 import { defaultWindowIcon } from "@tauri-apps/api/app";
 import { Menu, MenuItemOptions } from "@tauri-apps/api/menu";
 import { TrayIcon } from "@tauri-apps/api/tray";
-import { clipOTP } from "./otp";
 import { listTokenIDs } from "./config";
+import { clipOTP } from "./otp";
 
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
