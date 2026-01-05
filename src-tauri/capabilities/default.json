@@ -1,0 +1,46 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "core:app:allow-default-window-icon",
+    "core:menu:allow-set-text",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "run-otp",
+          "cmd": "oathtool",
+          "args": [
+            "--totp",
+            "-b",
+            {
+              "validator": ".+"
+            }
+          ]
+        }
+      ]
+    },
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "fs:default",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/.config/otp-bar" },
+        { "path": "$HOME/.config/otp-bar/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read",
+      "allow": [{ "path": "$HOME/.config/otp-bar/*" }]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [{ "path": "$HOME/.config/otp-bar" }]
+    }
+  ]
+}
