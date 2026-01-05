@@ -1,6 +1,16 @@
 import { BaseDirectory, readDir, readTextFile } from "@tauri-apps/plugin-fs";
 
 const CONFIG_DIR = ".config/otp-bar";
+const CONFIG_FILE = "config.json";
+
+export async function getExecutablePath(): Promise<string> {
+  // Read the oathtool executable path from config file
+  const configText = await readTextFile(`${CONFIG_DIR}/${CONFIG_FILE}`, {
+    baseDir: BaseDirectory.Home,
+  });
+  const config = JSON.parse(configText);
+  return config.oathtoolExecutablePath || "oathtool";
+}
 
 export async function listTokenIDs(): Promise<Array<string>> {
   // ホームディレクトリの .config/otp-bar ディレクトリ内のファイル名を取得
@@ -11,10 +21,11 @@ export async function listTokenIDs(): Promise<Array<string>> {
 
   const idList: Array<string> = [];
   for (const entry of entries) {
-    if (entry.name) {
+    if (entry.name && entry.name !== CONFIG_FILE) {
       idList.push(entry.name);
     }
   }
+  console.log("Token IDs:", idList);
   return idList;
 }
 
@@ -24,6 +35,7 @@ export async function readToken(id: string): Promise<string> {
     baseDir: BaseDirectory.Home,
   });
   const trimedContents = textContents.trim();
+  console.log(`Token for ID ${id}:`, trimedContents);
 
   return trimedContents;
 }
