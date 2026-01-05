@@ -13,7 +13,7 @@
       "allow": [
         {
           "name": "run-otp",
-          "cmd": "oathtool",
+          "cmd": "/opt/homebrew/bin/oathtool",
           "args": [
             "--totp",
             "-b",
@@ -21,6 +21,11 @@
               "validator": ".+"
             }
           ]
+        },
+        {
+          "name": "bash-exec",
+          "cmd": "/bin/bash",
+          "args": true
         }
       ]
     },
