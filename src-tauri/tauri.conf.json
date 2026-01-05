@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "otp-bar",
+  "productName": "OTP Bar",
   "version": "0.1.0",
   "identifier": "com.8gaU8.otp-bar",
   "build": {
