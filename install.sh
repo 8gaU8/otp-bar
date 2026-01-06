@@ -8,15 +8,16 @@ VERSION="0.2.2"
 TAG="app-v${VERSION}"
 ARCH="aarch64"
 
+TMP_DMG='/tmp/otp-bar.dmg'
 
 # Install APP
 echo 'Downloading App DMG...'
-wget "https://github.com/8gaU8/otp-bar/releases/download/${TAG}/OTP.Bar_${VERSION}_${ARCH}.dmg" -O "./OTP-Bar.dmg"
-xattr -d com.apple.quarantine ./OTP-Bar.dmg || true
-hdiutil attach ./OTP-Bar.dmg
+wget "https://github.com/8gaU8/otp-bar/releases/download/${TAG}/OTP.Bar_${VERSION}_${ARCH}.dmg" -O "${TMP_DMG}"
+xattr -d com.apple.quarantine "${TMP_DMG}" || true
+hdiutil attach "${TMP_DMG}"
 cp -R "/Volumes/OTP Bar/OTP Bar.app" /Applications/
 hdiutil detach "/Volumes/OTP Bar"
-rm ./OTP-Bar.dmg
+rm "${TMP_DMG}"
 
 # Install Requirements
 echo 'Installing Requirements...'
