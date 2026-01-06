@@ -16,11 +16,15 @@
         "title": "otp-bar",
         "width": 800,
         "height": 600,
-        "visible": false
+        "visible": true  
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {

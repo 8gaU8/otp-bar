@@ -9,6 +9,15 @@
     "core:app:allow-default-window-icon",
     "core:menu:allow-set-text",
     {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "**/*"
+        }
+      ]
+    },
+
+    {
       "identifier": "shell:allow-execute",
       "allow": [
         {
@@ -35,17 +44,55 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$HOME/.config/otp-bar" },
-        { "path": "$HOME/.config/otp-bar/*" }
+        {
+          "path": "$HOME/.config/otp-bar"
+        },
+        {
+          "path": "$HOME/.config/otp-bar/*"
+        }
       ]
     },
     {
       "identifier": "fs:allow-read",
-      "allow": [{ "path": "$HOME/.config/otp-bar/*" }]
+      "allow": [
+        {
+          "path": "$HOME/.config/otp-bar/*"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-create",
+      "allow": [
+        {
+          "path": "$HOME/.config/otp-bar/*"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        {
+          "path": "$HOME/.config/otp-bar/*"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        {
+          "path": "$HOME/.config/otp-bar/*"
+        }
+      ]
     },
     {
       "identifier": "fs:allow-read-dir",
-      "allow": [{ "path": "$HOME/.config/otp-bar" }]
-    }
+      "allow": [
+        {
+          "path": "$HOME/.config/otp-bar"
+        }
+      ]
+    },
+    "dialog:default",
+    "dialog:allow-open"
   ]
 }
