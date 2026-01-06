@@ -66,7 +66,7 @@ async function defaultMenu(): Promise<Menu> {
     },
   };
   const configMenuItem = await MenuItem.new(configureMenuItepOptions);
-  const items  = [configMenuItem, seperatorItem, quitItem];
+  const items  = [configMenuItem, quitItem, seperatorItem];
   const menu = await Menu.new();
   for (const item of items) {
     menu.append(item);
