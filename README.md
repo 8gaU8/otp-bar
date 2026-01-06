@@ -52,10 +52,14 @@ $ cat token2
 If you see an error message saying the app is "damaged" and needs to be moved to trash, this is due to macOS Gatekeeper security. You can fix this by removing the quarantine attribute:
 
 1. Open Terminal
-2. Navigate to the directory where you downloaded the DMG file
-3. Run the following command:
+2. Navigate to the directory where you downloaded the DMG file (usually `~/Downloads`)
+3. Run the following command (replace `VERSION` and `ARCH` with your actual file name):
    ```bash
-   xattr -d com.apple.quarantine OTP.Bar_*.dmg
+   xattr -d com.apple.quarantine OTP.Bar_VERSION_ARCH.dmg
+   ```
+   For example:
+   ```bash
+   xattr -d com.apple.quarantine OTP.Bar_0.2.0_aarch64.dmg
    ```
 4. Now open the DMG file again
 

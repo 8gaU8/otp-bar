@@ -59,8 +59,10 @@ jobs:
             ## macOS Installation Note
             If you see a "damaged" error when opening the DMG, run this command in Terminal:
             ```bash
-            xattr -d com.apple.quarantine OTP.Bar_*.dmg
+            xattr -d com.apple.quarantine ~/Downloads/OTP.Bar_*_*.dmg
             ```
+            (Replace the filename with your actual downloaded file)
+            
             Then open the DMG again. This is needed because the app is not code-signed.
           releaseDraft: true
           prerelease: false
