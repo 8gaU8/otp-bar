@@ -43,9 +43,24 @@ jobs:
       - uses: tauri-apps/tauri-action@v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment and set these secrets for code signing (requires Apple Developer account)
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
           releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseBody: |
+            See the assets to download this version and install.
+            
+            ## macOS Installation Note
+            If you see a "damaged" error when opening the DMG, run this command in Terminal:
+            ```bash
+            xattr -d com.apple.quarantine OTP.Bar_*.dmg
+            ```
+            Then open the DMG again. This is needed because the app is not code-signed.
           releaseDraft: true
           prerelease: false

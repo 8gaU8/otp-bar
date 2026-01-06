@@ -43,4 +43,25 @@ $ cat token2
 ```
   
 ## Installation
-Download from a release page
+
+### Download from Release Page
+1. Download the `.dmg` file from the [releases page](https://github.com/8gaU8/otp-bar/releases)
+2. Open the downloaded `.dmg` file
+
+### Handling "Damaged" Error on macOS
+If you see an error message saying the app is "damaged" and needs to be moved to trash, this is due to macOS Gatekeeper security. You can fix this by removing the quarantine attribute:
+
+1. Open Terminal
+2. Navigate to the directory where you downloaded the DMG file
+3. Run the following command:
+   ```bash
+   xattr -d com.apple.quarantine OTP.Bar_*.dmg
+   ```
+4. Now open the DMG file again
+
+Alternatively, after mounting the DMG, you can remove the quarantine from the app itself:
+```bash
+xattr -dr com.apple.quarantine /Volumes/OTP\ Bar/OTP\ Bar.app
+```
+
+**Note**: This is necessary because the app is not code-signed with an Apple Developer certificate. The app is safe to use - you can verify the source code in this repository.
