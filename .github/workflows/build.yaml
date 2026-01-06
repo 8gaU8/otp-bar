@@ -2,7 +2,7 @@ name: 'publish'
 on:
   push:
     branches:
-      - main # 簡単のため main に変更
+      - release
 
 jobs:
   publish-tauri:
