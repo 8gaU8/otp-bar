@@ -1,6 +1,7 @@
 import { defaultWindowIcon } from "@tauri-apps/api/app";
 import {
   Menu,
+  MenuItem,
   MenuItemOptions,
   PredefinedMenuItem,
 } from "@tauri-apps/api/menu";
@@ -20,14 +21,16 @@ async function createTray(): Promise<TrayIcon> {
   return tray;
 }
 
-function createMenuItemOptions(id: string): MenuItemOptions {
-  return {
+async function createMenuItem(id: string): Promise<MenuItem> {
+  const options = {
     id: `otp-bar-${id}`,
     text: `OTP: ${id}`,
     action: async () => {
-      clipOTP(id);
+      console.log("Menu item clicked for ID:", id);
+      await clipOTP(id);
     },
   };
+  return await MenuItem.new(options);
 }
 
 async function handleConfigure() {
@@ -48,13 +51,13 @@ async function handleConfigure() {
 }
 
 async function defaultMenu(): Promise<Menu> {
-  const seperator = await PredefinedMenuItem.new({
+  const seperatorItem = await PredefinedMenuItem.new({
     item: "Separator",
   });
-  const quit = await PredefinedMenuItem.new({
+  const quitItem = await PredefinedMenuItem.new({
     item: "Quit",
   });
-  const configureMenuItem: MenuItemOptions = {
+  const configureMenuItepOptions: MenuItemOptions = {
     id: "otp-bar-configure",
     text: "Configure (restart automatically)",
     action: async () => {
@@ -62,9 +65,13 @@ async function defaultMenu(): Promise<Menu> {
       await relaunch();
     },
   };
-  const menu = await Menu.new({
-    items: [configureMenuItem, quit, seperator],
-  });
+  const configMenuItem = await MenuItem.new(configureMenuItepOptions);
+  const items  = [configMenuItem, seperatorItem, quitItem];
+  const menu = await Menu.new();
+  for (const item of items) {
+    menu.append(item);
+  }
+
   return menu;
 }
 
@@ -72,7 +79,7 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
   const menu = await defaultMenu();
 
   for (const id of idList) {
-    const option = createMenuItemOptions(id);
+    const option = await createMenuItem(id);
     menu.append(option);
   }
   return menu;
