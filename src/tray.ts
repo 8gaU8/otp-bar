@@ -9,6 +9,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listTokenIDs, writeTokenFile } from "./config";
 import { clipOTP } from "./otp";
 import { generateConfiguration } from "./parseQR";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
@@ -40,7 +41,7 @@ async function handleConfigure() {
     console.log(file);
     const data = await generateConfiguration(file);
     for (const user of data) {
-      await writeTokenFile(`1_${user.name}`, user.secret);
+      await writeTokenFile(user.name, user.secret);
     }
     console.log(data);
   }
@@ -55,9 +56,10 @@ async function defaultMenu(): Promise<Menu> {
   });
   const configureMenuItem: MenuItemOptions = {
     id: "otp-bar-configure",
-    text: "Configure...",
+    text: "Configure (restart automatically)",
     action: async () => {
-      handleConfigure();
+      await handleConfigure();
+      await relaunch();
     },
   };
   const menu = await Menu.new({
@@ -67,21 +69,12 @@ async function defaultMenu(): Promise<Menu> {
 }
 
 async function createMenu(idList: Array<string>): Promise<Menu> {
-  // const items: MenuItemOptions[] = [
-  //   {
-  //     id: "otp-bar-configure",
-  //     text: "Configure...",
-  //     action: async () => {
-  //       handleConfigure();
-  //     },
-  //   },
-  // ];
-  // for (const id of idList) {
-  //   const option = createMenuItemOptions(id);
-  //   items.push(option);
-  // }
   const menu = await defaultMenu();
 
+  for (const id of idList) {
+    const option = createMenuItemOptions(id);
+    menu.append(option);
+  }
   return menu;
 }
 
