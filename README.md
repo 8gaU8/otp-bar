@@ -7,7 +7,7 @@ A menu bar application for one time passwords
 Simply, run the following command
 
 ```bash
-$ curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/install.sh | /bin/bash
+curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/install.sh | /bin/bash
 ```
 
 ## Manual Installation
@@ -19,14 +19,14 @@ $ curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/inst
 
 3. Run the following command to sign.
     ```bash
-    $ xattr -d com.apple.quarantine /path/to/download/OTP.Bar_${version}_aarch64.dmg
+    xattr -d com.apple.quarantine /path/to/download/OTP.Bar_${version}_aarch64.dmg
     ```
 
 4. Create a configuration file.
 
     ```bash
-    $ mkdir -p $HOME/.config/otp-bar
-    $ echo '{ "oathtoolExecutablePath": "/opt/homebrew/bin/oathtool" }'> "${HOME}/.config/otp-bar/config.json"
+    mkdir -p $HOME/.config/otp-bar; 
+    echo '{ "oathtoolExecutablePath": "/opt/homebrew/bin/oathtool" }'> "${HOME}/.config/otp-bar/config.json"
     ```
 
 
