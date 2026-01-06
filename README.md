@@ -53,11 +53,11 @@ If you see an error message saying the app is "damaged" and needs to be moved to
 
 1. Open Terminal
 2. Navigate to the directory where you downloaded the DMG file (usually `~/Downloads`)
-3. Run the following command (replace `VERSION` and `ARCH` with your actual file name):
+3. Run the following command with your actual DMG filename:
    ```bash
-   xattr -d com.apple.quarantine OTP.Bar_VERSION_ARCH.dmg
+   xattr -d com.apple.quarantine OTP.Bar_X.X.X_aarch64.dmg
    ```
-   For example:
+   For example, for version 0.2.0:
    ```bash
    xattr -d com.apple.quarantine OTP.Bar_0.2.0_aarch64.dmg
    ```
