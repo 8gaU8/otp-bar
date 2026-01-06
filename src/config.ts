@@ -1,7 +1,28 @@
-import { BaseDirectory, readDir, readTextFile } from "@tauri-apps/plugin-fs";
+import {
+  BaseDirectory,
+  exists,
+  readDir,
+  readTextFile,
+  writeTextFile,
+} from "@tauri-apps/plugin-fs";
 
 const CONFIG_DIR = ".config/otp-bar";
 const CONFIG_FILE = "config.json";
+
+export async function writeTokenFile(userName: string, token: string) {
+  const fileName = `${CONFIG_DIR}/${userName}`;
+  const doesExist = await exists(fileName, {
+    baseDir: BaseDirectory.Home,
+  });
+
+  if (doesExist) {
+    console.log(`Token file for ${userName} already exists. Skipping write.`);
+    return;
+  }
+  await writeTextFile(`${CONFIG_DIR}/${userName}`, token, {
+    baseDir: BaseDirectory.Home,
+  });
+}
 
 export async function getExecutablePath(): Promise<string> {
   // Read the oathtool executable path from config file
