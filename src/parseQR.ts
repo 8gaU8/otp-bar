@@ -2,44 +2,6 @@ import { readFile } from "@tauri-apps/plugin-fs";
 import jsQR from "jsqr";
 import { parseMigURL } from "./parseUrl";
 
-function resolveImageURL(imgPath: string): string {
-  try {
-    const resolvedImagePath = new URL(imgPath, import.meta.url).href;
-    console.log("RESLOVED", resolvedImagePath);
-    return resolvedImagePath;
-  } catch (_error) {
-    console.log("NOT RESOLVED", imgPath);
-    return imgPath;
-  }
-}
-
-async function loadImageElement(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => {
-      throw new Error(`Failed to load image from path: ${src}`);
-    };
-    image.src = src;
-  });
-}
-
-async function createImageData(imgPath: string): Promise<ImageData> {
-  // const imageSrc = resolveImageURL(imgPath);
-  const imageSrc = imgPath;
-  console.log(imageSrc);
-  console.log("Loading image from:", await readFile(imgPath, {}));
-  const image = await loadImageElement(imageSrc);
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth || image.width;
-  canvas.height = image.naturalHeight || image.height;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("Unable to acquire 2D canvas context");
-  }
-  context.drawImage(image, 0, 0);
-  return context.getImageData(0, 0, canvas.width, canvas.height);
-}
 
 async function readFileAsPNGBlob(path: string): Promise<Blob> {
   // select format based on file extension if needed
@@ -81,12 +43,17 @@ async function pngBlobToImageData(pngBlob: Blob): Promise<ImageData> {
   });
 }
 
-export async function readQR(imagePath: string) {
-  // const imageData = await createImageData(imagePath);
-  // const width = imageData.width;
-  // const height = imageData.height;
-  const pngBlob = await readFileAsPNGBlob(imagePath);
+async function loadImageDataFromFile(path: string): Promise<ImageData> {
+  const pngBlob = await readFileAsPNGBlob(path);
   const imageData = await pngBlobToImageData(pngBlob);
+  return imageData;
+}
+
+export async function readQR(imagePath: string) {
+  // Load image and convert to ImageData
+  const imageData = await loadImageDataFromFile(imagePath);
+
+  // Use jsQR to read the QR code from ImageData
   const code = jsQR(imageData.data, imageData.width, imageData.height);
   if (!code) {
     throw new Error("QR code not found");
