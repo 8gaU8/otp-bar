@@ -132,8 +132,12 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
 async function updateTimerDisplay() {
   // Update only the timer menu item text instead of recreating the entire menu
   if (timerMenuItem) {
-    const newText = getTimerDisplayText();
-    await timerMenuItem.setText(newText);
+    try {
+      const newText = getTimerDisplayText();
+      await timerMenuItem.setText(newText);
+    } catch (error) {
+      console.error("Failed to update timer display:", error);
+    }
   }
 }
 
@@ -161,8 +165,11 @@ export async function setup() {
   let previousRemainingTime = getOTPRemainingTime();
 
   // Update timer display every second
-  setInterval(async () => {
-    await updateTimerDisplay();
+  setInterval(() => {
+    // Run updates without blocking the interval
+    updateTimerDisplay().catch((error) => {
+      console.error("Timer update failed:", error);
+    });
     
     const currentRemainingTime = getOTPRemainingTime();
     
