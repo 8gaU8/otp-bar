@@ -17,9 +17,7 @@
     "@tauri-apps/plugin-process": "~2.3.1",
     "@tauri-apps/plugin-shell": "~2.3.3",
     "@types/react": "^19.2.7",
-    "jsqr": "^1.4.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "jsqr": "^1.4.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.6",
