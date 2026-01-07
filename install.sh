@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 
 # Params
-VERSION="0.2.3"
+VERSION="0.3.0"
 TAG="app-v${VERSION}"
 ARCH="aarch64"
 
