@@ -1,7 +1,7 @@
 /**
  * Calculate the remaining time in seconds for the current OTP period
  * OTP typically refreshes every 30 seconds based on Unix time
- * @returns Remaining time in seconds (0-29)
+ * @returns Remaining time in seconds (1-30, where 30 means start of new period)
  */
 export function getOTPRemainingTime(): number {
   const now = Math.floor(Date.now() / 1000); // Current Unix time in seconds
@@ -17,13 +17,4 @@ export function getOTPRemainingTime(): number {
  */
 export function isOTPInWarningPeriod(): boolean {
   return getOTPRemainingTime() <= 10;
-}
-
-/**
- * Format remaining time for display
- * @returns Formatted string like "15s" or "5s"
- */
-export function formatRemainingTime(): string {
-  const remaining = getOTPRemainingTime();
-  return `${remaining}s`;
 }

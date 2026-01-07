@@ -67,7 +67,7 @@ async function handleConfigure() {
 }
 
 async function defaultMenu(): Promise<Menu> {
-  const seperatorItem = await PredefinedMenuItem.new({
+  const separatorItem = await PredefinedMenuItem.new({
     item: "Separator",
   });
   const quitItem = await PredefinedMenuItem.new({
@@ -82,7 +82,7 @@ async function defaultMenu(): Promise<Menu> {
     },
   };
   const configMenuItem = await MenuItem.new(configureMenuItepOptions);
-  const items  = [configMenuItem, quitItem, seperatorItem];
+  const items  = [configMenuItem, quitItem, separatorItem];
   const menu = await Menu.new();
   for (const item of items) {
     menu.append(item);
@@ -99,10 +99,10 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
   menu.append(timerItem);
 
   // Add separator
-  const seperatorItem = await PredefinedMenuItem.new({
+  const separatorItem = await PredefinedMenuItem.new({
     item: "Separator",
   });
-  menu.append(seperatorItem);
+  menu.append(separatorItem);
 
   for (const id of idList) {
     const option = await createMenuItem(id);
@@ -113,6 +113,8 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
 
 async function updateTimerDisplay(tray: TrayIcon, tokenIdList: Array<string>) {
   // Recreate the menu with updated timer
+  // Note: Tauri's menu API doesn't support updating individual menu items,
+  // so we need to rebuild the entire menu to update the timer display
   const menu = await createMenu(tokenIdList);
   await tray.setMenu(menu);
 }
