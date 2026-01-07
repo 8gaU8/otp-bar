@@ -8,13 +8,16 @@ import {
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listTokenIDs, writeTokenFile } from "./config";
-import { clipOTP } from "./otp";
+import { clipOTP, generateOTP } from "./otp";
 import { generateConfiguration } from "./parseQR";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getOTPRemainingTime, isOTPInWarningPeriod } from "./otpTimer";
 
 // Global reference to timer menu item for updating
 let timerMenuItem: MenuItem | null = null;
+
+// Global references to OTP menu items for updating
+const otpMenuItems: Map<string, MenuItem> = new Map();
 
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
@@ -45,15 +48,23 @@ async function createTimerMenuItem(): Promise<MenuItem> {
 }
 
 async function createMenuItem(id: string): Promise<MenuItem> {
+  // Generate initial OTP for display
+  const otp = await generateOTP(id);
+  
   const options = {
     id: `otp-bar-${id}`,
-    text: `OTP: ${id}`,
+    text: `${id}: ${otp}`,
     action: async () => {
       console.log("Menu item clicked for ID:", id);
       await clipOTP(id);
     },
   };
-  return await MenuItem.new(options);
+  const item = await MenuItem.new(options);
+  
+  // Store reference for later updates
+  otpMenuItems.set(id, item);
+  
+  return item;
 }
 
 async function handleConfigure() {
@@ -126,6 +137,19 @@ async function updateTimerDisplay() {
   }
 }
 
+async function updateOTPDisplays() {
+  // Update all OTP menu items with fresh codes
+  for (const [id, menuItem] of otpMenuItems.entries()) {
+    try {
+      const otp = await generateOTP(id);
+      const newText = `${id}: ${otp}`;
+      await menuItem.setText(newText);
+    } catch (error) {
+      console.error(`Failed to update OTP for ${id}:`, error);
+    }
+  }
+}
+
 export async function setup() {
   // トレイアイコンを作成
   const tray = await createTray();
@@ -134,8 +158,20 @@ export async function setup() {
   const menu = await createMenu(tokenIdList);
   await tray.setMenu(menu);
 
+  let previousRemainingTime = getOTPRemainingTime();
+
   // Update timer display every second
   setInterval(async () => {
     await updateTimerDisplay();
+    
+    const currentRemainingTime = getOTPRemainingTime();
+    
+    // When timer resets (goes from 1 to 30), update all OTP codes
+    if (currentRemainingTime > previousRemainingTime) {
+      console.log("OTP period reset detected, updating all OTP codes");
+      await updateOTPDisplays();
+    }
+    
+    previousRemainingTime = currentRemainingTime;
   }, 1000);
 }
