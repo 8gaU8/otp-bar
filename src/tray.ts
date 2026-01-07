@@ -166,8 +166,9 @@ export async function setup() {
     
     const currentRemainingTime = getOTPRemainingTime();
     
-    // When timer resets from 1 to 30, update all OTP codes
-    if (previousRemainingTime === 1 && currentRemainingTime === 30) {
+    // Detect timer reset: remaining time increased (wrapped around from low to high)
+    // This handles the case where we might miss the exact 1→30 transition
+    if (currentRemainingTime > previousRemainingTime) {
       console.log("OTP period reset detected, updating all OTP codes");
       // Run OTP updates asynchronously without blocking the timer
       updateOTPDisplays().catch((error) => {
