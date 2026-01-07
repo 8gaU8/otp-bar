@@ -184,5 +184,5 @@ export async function setup() {
     }
     
     previousRemainingTime = currentRemainingTime;
-  }, 1000);
+  }, 500);
 }
