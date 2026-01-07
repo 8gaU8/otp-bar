@@ -8,13 +8,16 @@ import {
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listTokenIDs, writeTokenFile } from "./config";
-import { clipOTP } from "./otp";
+import { clipOTP, generateOTP } from "./otp";
 import { generateConfiguration } from "./parseQR";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getOTPRemainingTime, isOTPInWarningPeriod } from "./otpTimer";
 
 // Global reference to timer menu item for updating
 let timerMenuItem: MenuItem | null = null;
+
+// Global references to OTP menu items for updating
+const otpMenuItems: Map<string, MenuItem> = new Map();
 
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
@@ -45,22 +48,30 @@ async function createTimerMenuItem(): Promise<MenuItem> {
 }
 
 async function createMenuItem(id: string): Promise<MenuItem> {
+  // Generate initial OTP for display
+  const otp = await generateOTP(id);
+  
   const options = {
     id: `otp-bar-${id}`,
-    text: `OTP: ${id}`,
+    text: `${id}: ${otp}`,
     action: async () => {
       console.log("Menu item clicked for ID:", id);
       await clipOTP(id);
     },
   };
-  return await MenuItem.new(options);
+  const item = await MenuItem.new(options);
+  
+  // Store reference for later updates
+  otpMenuItems.set(id, item);
+  
+  return item;
 }
 
 async function handleConfigure() {
   const file = await open({
     multiple: false,
     directory: false,
-    extensions: ["png"],
+    extensions: ["png","jpg","jpeg"],
   });
   console.log(file);
   if (typeof file === "string") {
@@ -121,8 +132,25 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
 async function updateTimerDisplay() {
   // Update only the timer menu item text instead of recreating the entire menu
   if (timerMenuItem) {
-    const newText = getTimerDisplayText();
-    await timerMenuItem.setText(newText);
+    try {
+      const newText = getTimerDisplayText();
+      await timerMenuItem.setText(newText);
+    } catch (error) {
+      console.error("Failed to update timer display:", error);
+    }
+  }
+}
+
+async function updateOTPDisplays() {
+  // Update all OTP menu items with fresh codes
+  for (const [id, menuItem] of otpMenuItems.entries()) {
+    try {
+      const otp = await generateOTP(id);
+      const newText = `${id}: ${otp}`;
+      await menuItem.setText(newText);
+    } catch (error) {
+      console.error(`Failed to update OTP for ${id}:`, error);
+    }
   }
 }
 
@@ -134,8 +162,27 @@ export async function setup() {
   const menu = await createMenu(tokenIdList);
   await tray.setMenu(menu);
 
+  let previousRemainingTime = getOTPRemainingTime();
+
   // Update timer display every second
-  setInterval(async () => {
-    await updateTimerDisplay();
-  }, 1000);
+  setInterval(() => {
+    // Run updates without blocking the interval
+    updateTimerDisplay().catch((error) => {
+      console.error("Timer update failed:", error);
+    });
+    
+    const currentRemainingTime = getOTPRemainingTime();
+    
+    // Detect timer reset: remaining time increased (wrapped around from low to high)
+    // This handles the case where we might miss the exact 1→30 transition
+    if (currentRemainingTime > previousRemainingTime) {
+      console.log("OTP period reset detected, updating all OTP codes");
+      // Run OTP updates asynchronously without blocking the timer
+      updateOTPDisplays().catch((error) => {
+        console.error("Failed to update OTP displays:", error);
+      });
+    }
+    
+    previousRemainingTime = currentRemainingTime;
+  }, 500);
 }

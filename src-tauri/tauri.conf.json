@@ -13,7 +13,7 @@
     "windows": [
       {
         "title": "otp-bar",
-        "visible": false
+        "visible": true
       }
     ],
     "security": {
