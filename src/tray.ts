@@ -11,6 +11,7 @@ import { listTokenIDs, writeTokenFile } from "./config";
 import { clipOTP } from "./otp";
 import { generateConfiguration } from "./parseQR";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { getOTPRemainingTime, isOTPInWarningPeriod } from "./otpTimer";
 
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
@@ -19,6 +20,21 @@ async function createTray(): Promise<TrayIcon> {
   });
 
   return tray;
+}
+
+async function createTimerMenuItem(): Promise<MenuItem> {
+  const remainingTime = getOTPRemainingTime();
+  const isWarning = isOTPInWarningPeriod();
+  const displayText = isWarning 
+    ? `⚠️ Time: ${remainingTime}s` 
+    : `⏱️ Time: ${remainingTime}s`;
+  
+  const options: MenuItemOptions = {
+    id: "otp-bar-timer",
+    text: displayText,
+    enabled: false, // Make it non-clickable as it's just for display
+  };
+  return await MenuItem.new(options);
 }
 
 async function createMenuItem(id: string): Promise<MenuItem> {
@@ -78,11 +94,27 @@ async function defaultMenu(): Promise<Menu> {
 async function createMenu(idList: Array<string>): Promise<Menu> {
   const menu = await defaultMenu();
 
+  // Add timer display at the top
+  const timerItem = await createTimerMenuItem();
+  menu.append(timerItem);
+
+  // Add separator
+  const seperatorItem = await PredefinedMenuItem.new({
+    item: "Separator",
+  });
+  menu.append(seperatorItem);
+
   for (const id of idList) {
     const option = await createMenuItem(id);
     menu.append(option);
   }
   return menu;
+}
+
+async function updateTimerDisplay(tray: TrayIcon, tokenIdList: Array<string>) {
+  // Recreate the menu with updated timer
+  const menu = await createMenu(tokenIdList);
+  await tray.setMenu(menu);
 }
 
 export async function setup() {
@@ -92,4 +124,9 @@ export async function setup() {
   const tokenIdList = await listTokenIDs();
   const menu = await createMenu(tokenIdList);
   await tray.setMenu(menu);
+
+  // Update timer display every second
+  setInterval(async () => {
+    await updateTimerDisplay(tray, tokenIdList);
+  }, 1000);
 }
