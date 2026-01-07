@@ -1,12 +1,12 @@
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
 use tauri::{
-    menu::{Menu, MenuBuilder, MenuItemBuilder, PredefinedMenuItem},
+    menu::{Menu, MenuBuilder, MenuItemBuilder, MenuItemKind, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    ActivationPolicy, AppHandle, Manager,
+    ActivationPolicy, AppHandle, Wry,
 };
+use tauri_plugin_dialog::FilePath;
 
 mod otp;
 mod qr;
@@ -74,7 +74,10 @@ async fn handle_configure(app: AppHandle) -> Result<(), String> {
         .add_filter("Images", &["png", "jpg", "jpeg"])
         .blocking_pick_file()
     {
-        let file_path_str = file_path.to_string_lossy().to_string();
+        let file_path_str = match file_path {
+            FilePath::Path(p) => p.to_string_lossy().to_string(),
+            _ => return Err("Only file paths are supported".to_string()),
+        };
         let tokens = qr::parse_qr_and_extract_tokens(&file_path_str)?;
 
         for token_data in tokens {
@@ -150,7 +153,7 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
         .map_err(|e| format!("Failed to build menu: {}", e))
 }
 
-async fn update_menu_periodically(app: AppHandle) {
+async fn update_menu_periodically(menu: Menu<Wry>) {
     let mut previous_remaining_time = get_otp_remaining_time();
 
     loop {
@@ -160,13 +163,9 @@ async fn update_menu_periodically(app: AppHandle) {
 
         // Update timer display
         let timer_text = get_timer_display_text();
-        if let Some(tray) = app.tray_by_id("main") {
-            if let Some(menu) = tray.menu() {
-                if let Some(timer_item) = menu.get("timer") {
-                    let _ = timer_item
-                        .as_menuitem()
-                        .map(|item| item.set_text(timer_text));
-                }
+        if let Some(menu_item) = menu.get("timer") {
+            if let MenuItemKind::MenuItem(item) = menu_item {
+                let _ = item.set_text(timer_text);
             }
         }
 
@@ -175,15 +174,13 @@ async fn update_menu_periodically(app: AppHandle) {
             println!("OTP period reset detected, updating all OTP codes");
 
             let token_ids = list_token_ids();
-            if let Some(tray) = app.tray_by_id("main") {
-                if let Some(menu) = tray.menu() {
-                    for id in &token_ids {
-                        if let Some(menu_item) = menu.get(id) {
-                            if let Ok(token) = read_token(id) {
-                                if let Ok(otp) = generate_otp(&token) {
-                                    let text = format!("{}: {}", id, otp);
-                                    let _ = menu_item.as_menuitem().map(|item| item.set_text(text));
-                                }
+            for id in &token_ids {
+                if let Some(menu_item) = menu.get(id) {
+                    if let Ok(token) = read_token(id) {
+                         if let Ok(otp) = generate_otp(&token) {
+                            let text = format!("{}: {}", id, otp);
+                            if let MenuItemKind::MenuItem(item) = menu_item {
+                                let _ = item.set_text(text);
                             }
                         }
                     }
@@ -237,9 +234,9 @@ pub fn run() {
                 .expect("Failed to create tray icon");
 
             // Start periodic update task
-            let app_handle = app.handle().clone();
+            let menu_handle = menu.clone();
             tauri::async_runtime::spawn(async move {
-                update_menu_periodically(app_handle).await;
+                update_menu_periodically(menu_handle).await;
             });
 
             Ok(())

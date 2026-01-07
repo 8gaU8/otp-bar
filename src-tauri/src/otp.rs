@@ -16,7 +16,7 @@ pub fn generate_otp(secret: &str) -> Result<String, String> {
         .as_secs();
 
     // Generate TOTP code (30 second period, 6 digits)
-    let code = totp::<Sha1>(&secret_bytes, timestamp, 30);
+    let code = totp::<Sha1>(&secret_bytes, timestamp);
 
     Ok(format!("{:06}", code))
 }
