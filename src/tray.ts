@@ -71,7 +71,7 @@ async function handleConfigure() {
   const file = await open({
     multiple: false,
     directory: false,
-    extensions: ["png"],
+    extensions: ["png","jpg","jpeg"],
   });
   console.log(file);
   if (typeof file === "string") {
