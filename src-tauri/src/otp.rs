@@ -1,6 +1,6 @@
 use data_encoding::BASE32_NOPAD;
 use std::time::{SystemTime, UNIX_EPOCH};
-use totp_lite::{totp, Sha1};
+use totp_lite::{totp_custom, Sha1};
 
 /// Generate a TOTP code from a base32-encoded secret
 pub fn generate_otp(secret: &str) -> Result<String, String> {
@@ -16,9 +16,9 @@ pub fn generate_otp(secret: &str) -> Result<String, String> {
         .as_secs();
 
     // Generate TOTP code (30 second period, 6 digits)
-    let code = totp::<Sha1>(&secret_bytes, timestamp);
+    let code = totp_custom::<Sha1>(30, 6, &secret_bytes, timestamp);
 
-    Ok(format!("{:06}", code))
+    Ok(code)
 }
 
 /// Calculate the remaining time in seconds for the current OTP period
@@ -57,5 +57,20 @@ mod tests {
     fn test_warning_period() {
         // This test just verifies the function runs without panicking
         let _is_warning = is_otp_in_warning_period();
+    }
+
+    #[test]
+    fn test_compare_with_oathtool() {
+        use totp_lite::{totp_custom, Sha1};
+        use data_encoding::BASE32_NOPAD;
+
+        // Secret: GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ (RFC 6238 test vector)
+        let secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+        let secret_bytes = BASE32_NOPAD.decode(secret.as_bytes()).unwrap();
+        // Time: 2009-02-13 23:31:30 UTC
+        let timestamp = 1234567890;
+
+        let code = totp_custom::<Sha1>(30, 6, &secret_bytes, timestamp);
+        assert_eq!(code, "005924", "Expected 005924, got {}", code);
     }
 }
