@@ -166,10 +166,13 @@ export async function setup() {
     
     const currentRemainingTime = getOTPRemainingTime();
     
-    // When timer resets (goes from 1 to 30), update all OTP codes
-    if (currentRemainingTime > previousRemainingTime) {
+    // When timer resets from 1 to 30, update all OTP codes
+    if (previousRemainingTime === 1 && currentRemainingTime === 30) {
       console.log("OTP period reset detected, updating all OTP codes");
-      await updateOTPDisplays();
+      // Run OTP updates asynchronously without blocking the timer
+      updateOTPDisplays().catch((error) => {
+        console.error("Failed to update OTP displays:", error);
+      });
     }
     
     previousRemainingTime = currentRemainingTime;
