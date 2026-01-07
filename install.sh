@@ -21,7 +21,7 @@ rm "${TMP_DMG}"
 
 # Install Requirements
 echo 'Installing Requirements...'
-brew install coreutils oath-toolkit
+HOMEBREW_NO_AUTO_UPDATE=1 brew install coreutils oath-toolkit
 
 
 # Initialize config
