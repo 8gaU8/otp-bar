@@ -1,6 +1,7 @@
 use image::DynamicImage;
 use rqrr;
 use std::io::Cursor;
+use data_encoding::BASE32_NOPAD;
 
 #[derive(Debug, Clone)]
 pub struct TokenData {
@@ -97,8 +98,6 @@ fn parse_migration_url(url: &str) -> Result<Vec<TokenData>, String> {
 
 // Simple protobuf parser for Google Authenticator migration format
 fn parse_migration_payload(data: &[u8]) -> Result<Vec<TokenData>, String> {
-    use data_encoding::BASE32_NOPAD;
-    
     let mut tokens = Vec::new();
     let mut i = 0;
     
@@ -141,8 +140,6 @@ fn parse_migration_payload(data: &[u8]) -> Result<Vec<TokenData>, String> {
 }
 
 fn parse_otp_parameter(data: &[u8]) -> Result<TokenData, String> {
-    use data_encoding::BASE32_NOPAD;
-    
     let mut secret_bytes = None;
     let mut name = None;
     let mut i = 0;

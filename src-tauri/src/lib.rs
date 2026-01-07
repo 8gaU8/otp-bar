@@ -5,7 +5,6 @@ use tauri::{
 };
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::thread;
 use std::time::Duration;
 use std::path::PathBuf;
 use std::fs;
@@ -167,7 +166,7 @@ async fn update_menu_periodically(app: AppHandle) {
     let mut previous_remaining_time = get_otp_remaining_time();
     
     loop {
-        thread::sleep(Duration::from_millis(500));
+        tokio::time::sleep(Duration::from_millis(500)).await;
         
         let current_remaining_time = get_otp_remaining_time();
         
