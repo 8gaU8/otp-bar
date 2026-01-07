@@ -4,16 +4,18 @@
   "version": "0.3.0",
   "identifier": "com.8gaU8.otp-bar",
   "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "beforeDevCommand": "",
+    "devUrl": "../index.html",
+    "beforeBuildCommand": "",
+    "frontendDist": "../index.html"
   },
   "app": {
     "windows": [
       {
         "title": "otp-bar",
-        "visible": true
+        "visible": false,
+        "width": 1,
+        "height": 1
       }
     ],
     "security": {
