@@ -4,10 +4,10 @@
   "version": "0.3.0",
   "identifier": "com.8gaU8.otp-bar",
   "build": {
-    "beforeDevCommand": "",
-    "devUrl": "../index.html",
-    "beforeBuildCommand": "",
-    "frontendDist": "../index.html"
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
