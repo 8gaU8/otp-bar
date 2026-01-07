@@ -13,6 +13,9 @@ import { generateConfiguration } from "./parseQR";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getOTPRemainingTime, isOTPInWarningPeriod } from "./otpTimer";
 
+// Global reference to timer menu item for updating
+let timerMenuItem: MenuItem | null = null;
+
 async function createTray(): Promise<TrayIcon> {
   const tray = await TrayIcon.new({
     id: "js_tray_icon",
@@ -22,19 +25,23 @@ async function createTray(): Promise<TrayIcon> {
   return tray;
 }
 
-async function createTimerMenuItem(): Promise<MenuItem> {
+function getTimerDisplayText(): string {
   const remainingTime = getOTPRemainingTime();
   const isWarning = isOTPInWarningPeriod();
-  const displayText = isWarning 
+  return isWarning 
     ? `⚠️ Time: ${remainingTime}s` 
     : `⏱️ Time: ${remainingTime}s`;
-  
+}
+
+async function createTimerMenuItem(): Promise<MenuItem> {
   const options: MenuItemOptions = {
     id: "otp-bar-timer",
-    text: displayText,
+    text: getTimerDisplayText(),
     enabled: false, // Make it non-clickable as it's just for display
   };
-  return await MenuItem.new(options);
+  const item = await MenuItem.new(options);
+  timerMenuItem = item; // Store reference for later updates
+  return item;
 }
 
 async function createMenuItem(id: string): Promise<MenuItem> {
@@ -111,12 +118,12 @@ async function createMenu(idList: Array<string>): Promise<Menu> {
   return menu;
 }
 
-async function updateTimerDisplay(tray: TrayIcon, tokenIdList: Array<string>) {
-  // Recreate the menu with updated timer
-  // Note: Tauri's menu API doesn't support updating individual menu items,
-  // so we need to rebuild the entire menu to update the timer display
-  const menu = await createMenu(tokenIdList);
-  await tray.setMenu(menu);
+async function updateTimerDisplay() {
+  // Update only the timer menu item text instead of recreating the entire menu
+  if (timerMenuItem) {
+    const newText = getTimerDisplayText();
+    await timerMenuItem.setText(newText);
+  }
 }
 
 export async function setup() {
@@ -129,6 +136,6 @@ export async function setup() {
 
   // Update timer display every second
   setInterval(async () => {
-    await updateTimerDisplay(tray, tokenIdList);
+    await updateTimerDisplay();
   }, 1000);
 }
