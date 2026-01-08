@@ -8,7 +8,7 @@ LATEST_VERSION='1.0.0'
 
 VERSION="${APP_VERSION:-${LATEST_VERSION}}"
 TAG="app-v${VERSION}"
-ARCH='aarch64"'
+ARCH='aarch64'
 
 TMP_DMG='/tmp/otp-bar.dmg'
 
