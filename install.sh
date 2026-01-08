@@ -19,14 +19,5 @@ cp -R "/Volumes/OTP Bar/OTP Bar.app" /Applications/
 hdiutil detach "/Volumes/OTP Bar"
 rm "${TMP_DMG}"
 
-# Initialize config directory
-echo 'Initializing config directory...'
-CONFIG_DIR="${HOME}/.config/otp-bar";
-
-if [ ! -d "${CONFIG_DIR}" ]; then
-    echo 'Creating config directory'
-    mkdir -p "${CONFIG_DIR}";
-fi
-
 echo "Installed OTP Bar ${VERSION}"
 

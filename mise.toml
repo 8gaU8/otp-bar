@@ -1,0 +1,21 @@
+[tools]
+act = "latest"
+node = "24.12.0"
+pnpm = "latest"
+
+[tasks.ci]
+description = "Run the CI pipeline"
+run = "act --workflows '.github/workflows/build.yaml' -P macos-latest=-self-hosted"
+
+[tasks.clean]
+description = "Clean the project"
+run = "rm -rf node_modules dist src-tauri/target"
+
+[tasks.dev]
+description = "Run the development server"
+run = "pnpm run tauri dev"
+
+[tasks.build]
+description = "Build the project"
+run = "pnpm run tauri build"
+
