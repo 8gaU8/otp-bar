@@ -11,4 +11,7 @@ run = "act --workflows '.github/workflows/build.yaml' -P macos-latest=-self-host
 description = "Clean the project"
 run = "rm -rf node_modules dist src-tauri/target"
 
+[tasks.dev]
+description = "Run the development server"
+run = "pnpm run tauri dev"
 
