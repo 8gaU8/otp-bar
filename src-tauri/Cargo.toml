@@ -1,6 +1,6 @@
 [package]
 name = "otp-bar"
-version = "0.3.0"
+version = "0.4.0"
 description = "A Tauri App"
 authors = ["8gaU8"]
 edition = "2021"
