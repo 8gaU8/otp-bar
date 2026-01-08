@@ -4,7 +4,7 @@ use std::time::Duration;
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItemBuilder, MenuItemKind, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    ActivationPolicy, AppHandle, Wry,
+    AppHandle, Wry,
 };
 use tauri_plugin_dialog::FilePath;
 
@@ -203,10 +203,6 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            // Dockアイコンを非表示に
-            #[cfg(target_os = "macos")]
-            app.set_activation_policy(ActivationPolicy::Accessory);
-
             // Create tray icon
             let token_ids = list_token_ids();
             let menu = create_menu(app.handle(), &token_ids).expect("Failed to create menu");
