@@ -15,3 +15,7 @@ run = "rm -rf node_modules dist src-tauri/target"
 description = "Run the development server"
 run = "pnpm run tauri dev"
 
+[tasks.build]
+description = "Build the project"
+run = "pnpm run tauri build"
+
