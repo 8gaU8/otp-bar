@@ -15,7 +15,12 @@ use otp::{generate_otp, get_otp_remaining_time, is_otp_in_warning_period};
 
 fn get_config_dir() -> PathBuf {
     let home = dirs::home_dir().expect("Could not find home directory");
-    home.join(".config/otp-bar")
+    let config_dir = home.join(".config/otp-bar");
+
+    if ! config_dir.exists() {
+        fs::create_dir_all(&config_dir).expect("Could not create config directory");
+    }
+    config_dir
 }
 
 fn list_token_ids() -> Vec<String> {
