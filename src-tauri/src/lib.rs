@@ -41,6 +41,11 @@ fn list_token_ids() -> Vec<String> {
     token_ids
 }
 
+#[tauri::command]
+fn list_token_ids_command() -> Vec<String> {
+    list_token_ids()
+}
+
 fn read_token(id: &str) -> Result<String, String> {
     let config_dir = get_config_dir();
     let token_path = config_dir.join(id);
@@ -94,6 +99,31 @@ async fn handle_configure(app: AppHandle) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+async fn handle_configure_command(file_path_str: &str) -> Result<(), String> {
+    println!("Configuring with file: {}", file_path_str);
+    let tokens = qr::parse_qr_and_extract_tokens(&file_path_str)?;
+
+    for token_data in tokens {
+        write_token_file(&token_data.name, &token_data.secret)?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn generate_otp_command(id: &str) -> String {
+    match read_token(id) {
+        Ok(token) => match generate_otp(&token) {
+            Ok(otp) => {
+                println!("Generated OTP for {}: {}", id, otp);
+                otp
+            }
+            Err(e) => format!("Error generating OTP: {}", e),
+        },
+        Err(e) => format!("Error reading token: {}", e),
+    }
 }
 
 async fn copy_otp_to_clipboard(app: AppHandle, id: String) -> Result<(), String> {
@@ -202,6 +232,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![list_token_ids_command, generate_otp_command, handle_configure_command])
         .setup(|app| {
             // Create tray icon
             let token_ids = list_token_ids();
