@@ -3,7 +3,20 @@
   "productName": "OTP Bar",
   "version": "1.0.0",
   "identifier": "com.8gaU8.otp-bar",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
   "app": {
+    "windows": [
+      {
+        "title": "OTP Bar",
+        "width": 800,
+        "height": 600
+      }
+    ],
     "security": {
       "csp": null,
       "assetProtocol": {

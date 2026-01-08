@@ -11,17 +11,15 @@ curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/instal
 ```
 
 ## Manual Installation
-1. Download the latest `*.dmg` file from a release page and copy `.app` into `/Applications` directory
+1. Download the latest `*.dmg` file from a release page
 
 2. Run the following command to sign.
     ```bash
     xattr -d com.apple.quarantine /path/to/download/OTP.Bar_${version}_aarch64.dmg
     ```
 
-3. Create a configuration directory (optional - will be created automatically).
-    ```bash
-    mkdir -p $HOME/.config/otp-bar
-    ```
+3. Copy `.app` into `/Applications` directory
+
 
 
 ## Configurations
