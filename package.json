@@ -1,7 +1,8 @@
 {
   "name": "otp-bar",
   "private": true,
-  "version": "0.4.0",
+  "author": {"name": "8gaU8"},
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "tauri": "tauri"
