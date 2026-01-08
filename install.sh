@@ -1,5 +1,5 @@
 #! /bin/bash
-set -eu pipefail
+set -eu -o pipefail
 cd "$(dirname "$0")"
 
 
@@ -19,20 +19,13 @@ cp -R "/Volumes/OTP Bar/OTP Bar.app" /Applications/
 hdiutil detach "/Volumes/OTP Bar"
 rm "${TMP_DMG}"
 
-# Install Requirements
-echo 'Installing Requirements...'
-HOMEBREW_NO_AUTO_UPDATE=1 brew install coreutils oath-toolkit
-
-
-# Initialize config
-echo 'Initializing config...'
+# Initialize config directory
+echo 'Initializing config directory...'
 CONFIG_DIR="${HOME}/.config/otp-bar";
-CONFIG_FILE="config.json";
 
 if [ ! -d "${CONFIG_DIR}" ]; then
-    echo 'Creating config files'
+    echo 'Creating config directory'
     mkdir -p "${CONFIG_DIR}";
-    echo '{ "oathtoolExecutablePath": "/opt/homebrew/bin/oathtool" }'> "${CONFIG_DIR}/${CONFIG_FILE}";
 fi
 
 echo "Installed OTP Bar ${VERSION}"

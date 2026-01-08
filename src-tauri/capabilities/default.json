@@ -5,96 +5,13 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "shell:default",
     "core:app:allow-default-window-icon",
     "core:menu:allow-set-text",
     "core:window:allow-hide",
-    {
-      "identifier": "fs:allow-read-file",
-      "allow": [
-        {
-          "path": "**/*"
-        }
-      ]
-    },
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "name": "run-otp",
-          "cmd": "/opt/homebrew/bin/oathtool",
-          "args": [
-            "--totp",
-            "-b",
-            {
-              "validator": ".+"
-            }
-          ]
-        },
-        {
-          "name": "bash-exec",
-          "cmd": "/bin/bash",
-          "args": true
-        }
-      ]
-    },
+
     "clipboard-manager:default",
     "clipboard-manager:allow-write-text",
-    "fs:default",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar"
-        },
-        {
-          "path": "$HOME/.config/otp-bar/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-read",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-create",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-exists",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-write-text-file",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-read-dir",
-      "allow": [
-        {
-          "path": "$HOME/.config/otp-bar"
-        }
-      ]
-    },
     "dialog:default",
-    "dialog:allow-open",
-    "process:default",
-    "process:allow-restart"
+    "dialog:allow-open"
   ]
 }
