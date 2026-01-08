@@ -130,6 +130,9 @@ fn parse_migration_payload(data: &[u8]) -> Result<Vec<TokenData>, String> {
                     2 => {
                         // Length-delimited
                         let (length, bytes_read) = decode_varint(&data[i..])?;
+                        if i + bytes_read + length > data.len() {
+                            return Err("Invalid protobuf data".to_string());
+                        }
                         i += bytes_read + length;
                     }
                     _ => i += 1,
@@ -155,6 +158,9 @@ fn parse_otp_parameter(data: &[u8]) -> Result<TokenData, String> {
                 // Field 1: secret (bytes)
                 let (length, bytes_read) = decode_varint(&data[i..])?;
                 i += bytes_read;
+                if i + length > data.len() {
+                    return Err("Invalid protobuf data: field extends beyond buffer".to_string());
+                }
                 secret_bytes = Some(data[i..i + length].to_vec());
                 i += length;
             }
@@ -162,6 +168,9 @@ fn parse_otp_parameter(data: &[u8]) -> Result<TokenData, String> {
                 // Field 2: name (string)
                 let (length, bytes_read) = decode_varint(&data[i..])?;
                 i += bytes_read;
+                if i + length > data.len() {
+                    return Err("Invalid protobuf data: field extends beyond buffer".to_string());
+                }
                 name = Some(String::from_utf8_lossy(&data[i..i + length]).to_string());
                 i += length;
             }
@@ -178,6 +187,9 @@ fn parse_otp_parameter(data: &[u8]) -> Result<TokenData, String> {
                         // Length-delimited
                         if i < data.len() {
                             let (length, bytes_read) = decode_varint(&data[i..])?;
+                            if i + bytes_read + length > data.len() {
+                                return Err("Invalid protobuf data: field extends beyond buffer".to_string());
+                            }
                             i += bytes_read + length;
                         }
                     }

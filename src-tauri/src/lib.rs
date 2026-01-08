@@ -177,7 +177,7 @@ async fn update_menu_periodically(menu: Menu<Wry>) {
             for id in &token_ids {
                 if let Some(menu_item) = menu.get(id) {
                     if let Ok(token) = read_token(id) {
-                         if let Ok(otp) = generate_otp(&token) {
+                        if let Ok(otp) = generate_otp(&token) {
                             let text = format!("{}: {}", id, otp);
                             if let MenuItemKind::MenuItem(item) = menu_item {
                                 let _ = item.set_text(text);
@@ -208,7 +208,11 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(
+                    app.default_window_icon()
+                        .expect("Failed to get default window icon for tray; ensure a window icon is configured in the Tauri bundle")
+                        .clone(),
+                )
                 .on_menu_event(move |app, event| {
                     let item_id = event.id().as_ref();
 
