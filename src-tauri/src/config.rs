@@ -23,6 +23,12 @@ impl Config {
     }
 
     pub fn save(&self, config_path: &PathBuf) -> Result<(), String> {
+        // Ensure parent directory exists
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create config directory: {}", e))?;
+        }
+        
         let content = toml::to_string_pretty(self)
             .map_err(|e| format!("Failed to serialize config to TOML: {}", e))?;
 

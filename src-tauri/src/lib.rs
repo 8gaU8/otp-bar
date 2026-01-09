@@ -48,7 +48,10 @@ fn read_token(id: &str) -> Result<String, String> {
 
 fn write_token(user_name: &str, token: &str) -> Result<(), String> {
     let config_path = get_config_file_path();
-    let mut config = Config::load(&config_path).unwrap_or_default();
+    let mut config = Config::load(&config_path).unwrap_or_else(|e| {
+        eprintln!("Warning: Failed to load config ({}), using default", e);
+        Config::default()
+    });
     
     config.add_token(user_name.to_string(), token.to_string());
     config.save(&config_path)?;
