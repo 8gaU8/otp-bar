@@ -8,6 +8,7 @@ use tauri::{
     ActivationPolicy, AppHandle, Manager, Wry,
 };
 use tauri_plugin_dialog::FilePath;
+use tauri_plugin_opener::OpenerExt;
 
 mod config;
 mod otp;
@@ -127,6 +128,11 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
         .build(app)
         .map_err(|e| format!("Failed to create restart menu item: {}", e))?;
 
+    let edit_config_item = MenuItemBuilder::new("Edit config")
+        .id("edit_config")
+        .build(app)
+        .map_err(|e| format!("Failed to create edit config menu item: {}", e))?;
+
     // Quit item
     let quit_item = PredefinedMenuItem::quit(app, Some("Quit"))
         .map_err(|e| format!("Failed to create quit menu item: {}", e))?;
@@ -145,6 +151,7 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
 
     let mut menu = menu
         .item(&configure_item)
+        .item(&edit_config_item)
         .item(&restart_item)
         .item(&quit_item)
         .item(&separator)
@@ -242,6 +249,7 @@ fn reload_menu(app: &AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+    .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
     .setup(|app| {
@@ -278,6 +286,11 @@ pub fn run() {
                     // let app_clone = app.clone();
                     // Reload config and update menu
                     reload_menu(app);
+                }else if item_id == "edit_config" {
+                    let config_path = get_config_file_path();
+                    let config_path_str = config_path.to_string_lossy().to_string();
+                    app.opener().open_path(config_path_str, None::<&str>)
+                        .map_err(|e| eprintln!("Failed to open config file: {}", e)).ok();
 
                 } else if item_id != "timer" {
                     // It's a token ID
