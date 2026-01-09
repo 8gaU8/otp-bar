@@ -25,8 +25,7 @@ impl Config {
         let content = fs::read_to_string(config_path)
             .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-        toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse TOML config: {}", e))
+        toml::from_str(&content).map_err(|e| format!("Failed to parse TOML config: {}", e))
     }
 
     pub fn save(&self, config_path: &PathBuf) -> Result<(), String> {
@@ -35,16 +34,21 @@ impl Config {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("Failed to create config directory: {}", e))?;
         }
-        
+
         let content = toml::to_string_pretty(self)
             .map_err(|e| format!("Failed to serialize config to TOML: {}", e))?;
 
-        fs::write(config_path, content)
-            .map_err(|e| format!("Failed to write config file: {}", e))
+        fs::write(config_path, content).map_err(|e| format!("Failed to write config file: {}", e))
     }
 
     pub fn add_token(&mut self, name: String, secret: String) {
-        self.tokens.insert(name, TokenData { secret, priority: None });
+        self.tokens.insert(
+            name,
+            TokenData {
+                secret,
+                priority: None,
+            },
+        );
     }
 
     pub fn get_token(&self, name: &str) -> Option<&String> {
@@ -71,7 +75,11 @@ impl Config {
 
         // Combine: prioritized tokens first, then alphabetically sorted tokens
         let mut result = Vec::new();
-        result.extend(tokens_with_priority.into_iter().map(|(name, _)| name.clone()));
+        result.extend(
+            tokens_with_priority
+                .into_iter()
+                .map(|(name, _)| name.clone()),
+        );
         result.extend(tokens_without_priority.into_iter().map(|name| name.clone()));
 
         result
@@ -93,7 +101,7 @@ mod tests {
     fn test_add_and_get_token() {
         let mut config = Config::default();
         config.add_token("test".to_string(), "SECRET123".to_string());
-        
+
         assert_eq!(config.get_token("test"), Some(&"SECRET123".to_string()));
         assert_eq!(config.get_token("nonexistent"), None);
     }
@@ -104,7 +112,7 @@ mod tests {
         config.add_token("zebra".to_string(), "SECRET1".to_string());
         config.add_token("apple".to_string(), "SECRET2".to_string());
         config.add_token("banana".to_string(), "SECRET3".to_string());
-        
+
         let names = config.list_token_names();
         assert_eq!(names, vec!["apple", "banana", "zebra"]);
     }
@@ -112,21 +120,27 @@ mod tests {
     #[test]
     fn test_list_token_names_with_priority() {
         let mut config = Config::default();
-        
+
         // Add tokens with priority
-        config.tokens.insert("token_b".to_string(), TokenData {
-            secret: "SECRET2".to_string(),
-            priority: Some(3),
-        });
-        config.tokens.insert("token_a".to_string(), TokenData {
-            secret: "SECRET1".to_string(),
-            priority: Some(1),
-        });
-        
+        config.tokens.insert(
+            "token_b".to_string(),
+            TokenData {
+                secret: "SECRET2".to_string(),
+                priority: Some(3),
+            },
+        );
+        config.tokens.insert(
+            "token_a".to_string(),
+            TokenData {
+                secret: "SECRET1".to_string(),
+                priority: Some(1),
+            },
+        );
+
         // Add tokens without priority
         config.add_token("zebra".to_string(), "SECRET4".to_string());
         config.add_token("apple".to_string(), "SECRET5".to_string());
-        
+
         let names = config.list_token_names();
         // Prioritized tokens first (sorted by priority), then alphabetically sorted tokens
         assert_eq!(names, vec!["token_a", "token_b", "apple", "zebra"]);
@@ -136,27 +150,39 @@ mod tests {
     fn test_save_and_load() {
         let temp_dir = std::env::temp_dir();
         let config_path = temp_dir.join("test_config.toml");
-        
+
         // Clean up if file exists
         let _ = fs::remove_file(&config_path);
-        
+
         // Create and save config
         let mut config = Config::default();
         config.add_token("token1".to_string(), "JBSWY3DPEHPK3PXP".to_string());
-        config.tokens.insert("token2".to_string(), TokenData {
-            secret: "HXDMVJECJJWSRB3H".to_string(),
-            priority: Some(1),
-        });
-        
+        config.tokens.insert(
+            "token2".to_string(),
+            TokenData {
+                secret: "HXDMVJECJJWSRB3H".to_string(),
+                priority: Some(1),
+            },
+        );
+
         config.save(&config_path).expect("Failed to save config");
-        
+
         // Load config
         let loaded_config = Config::load(&config_path).expect("Failed to load config");
-        
-        assert_eq!(loaded_config.get_token("token1"), Some(&"JBSWY3DPEHPK3PXP".to_string()));
-        assert_eq!(loaded_config.get_token("token2"), Some(&"HXDMVJECJJWSRB3H".to_string()));
-        assert_eq!(loaded_config.tokens.get("token2").unwrap().priority, Some(1));
-        
+
+        assert_eq!(
+            loaded_config.get_token("token1"),
+            Some(&"JBSWY3DPEHPK3PXP".to_string())
+        );
+        assert_eq!(
+            loaded_config.get_token("token2"),
+            Some(&"HXDMVJECJJWSRB3H".to_string())
+        );
+        assert_eq!(
+            loaded_config.tokens.get("token2").unwrap().priority,
+            Some(1)
+        );
+
         // Clean up
         let _ = fs::remove_file(&config_path);
     }
@@ -165,12 +191,11 @@ mod tests {
     fn test_load_nonexistent_file() {
         let temp_dir = std::env::temp_dir();
         let config_path = temp_dir.join("nonexistent_config.toml");
-        
+
         // Make sure file doesn't exist
         let _ = fs::remove_file(&config_path);
-        
+
         let config = Config::load(&config_path).expect("Should return default config");
         assert_eq!(config.tokens.len(), 0);
     }
 }
-
