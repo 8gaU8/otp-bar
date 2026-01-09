@@ -4,7 +4,7 @@ If you were using OTP Bar before the TOML configuration update, you may have ind
 
 ## Migration Steps
 
-### Option 1: Automatic Migration (Recommended)
+### Option 1: Manual Migration (Recommended)
 
 If you still have your old token files, you can manually create the TOML config:
 
@@ -12,9 +12,12 @@ If you still have your old token files, you can manually create the TOML config:
 2. Add your tokens in the following format:
 
 ```toml
-[tokens]
-"token1" = "YOUR_TOKEN_SECRET_1"
-"token2" = "YOUR_TOKEN_SECRET_2"
+[tokens.token1]
+secret = "YOUR_TOKEN_SECRET_1"
+
+[tokens.token2]
+secret = "YOUR_TOKEN_SECRET_2"
+priority = 1
 ```
 
 For example, if you had:
@@ -28,10 +31,25 @@ HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ
 
 Create `config.toml`:
 ```toml
-[tokens]
-"GitHub" = "JBSWY3DPEHPK3PXP"
-"Google" = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
+[tokens.GitHub]
+secret = "JBSWY3DPEHPK3PXP"
+
+[tokens.Google]
+secret = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
 ```
+
+You can optionally add a `priority` field to control the menu order:
+```toml
+[tokens.GitHub]
+secret = "JBSWY3DPEHPK3PXP"
+priority = 1
+
+[tokens.Google]
+secret = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
+priority = 2
+```
+
+Tokens with priority will appear first in the menu (sorted by priority value), followed by tokens without priority (sorted alphabetically).
 
 ### Option 2: Re-import from QR Codes
 
@@ -52,8 +70,8 @@ Run this script to automatically convert your old token files to TOML format:
 CONFIG_DIR="$HOME/.config/otp-bar"
 TOML_FILE="$CONFIG_DIR/config.toml"
 
-# Create the TOML header
-echo "[tokens]" > "$TOML_FILE"
+# Remove the old config file if it exists
+rm -f "$TOML_FILE"
 
 # Convert each file to a TOML entry
 for file in "$CONFIG_DIR"/*; do
@@ -66,7 +84,11 @@ for file in "$CONFIG_DIR"/*; do
     content=$(cat "$file" | tr -d '\n')
     
     # Add to TOML
-    echo "\"$filename\" = \"$content\"" >> "$TOML_FILE"
+    cat >> "$TOML_FILE" << EOF
+[tokens."$filename"]
+secret = "$content"
+
+EOF
     
     # Optionally, backup the old file
     # mv "$file" "$file.bak"

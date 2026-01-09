@@ -2,6 +2,9 @@
 # This file contains your OTP tokens
 # Replace YOURTOKENHERE with your actual base32-encoded secrets
 
-[tokens]
-token1 = "YOURTOKENHERE"
-token2 = "YOURTOKENHERE"
+[tokens.token1]
+secret = "YOURTOKENHERE"
+
+[tokens.token2]
+secret = "YOURTOKENHERE"
+priority = 1

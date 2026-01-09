@@ -47,12 +47,22 @@ The application now uses a TOML configuration file at `$HOME/.config/otp-bar/con
 You can also manually edit the `config.toml` file:
 
 ```toml
-[tokens]
-"Google Account" = "JBSWY3DPEHPK3PXP"
-"GitHub" = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
+[tokens."Google Account"]
+secret = "JBSWY3DPEHPK3PXP"
+priority = 1
+
+[tokens.GitHub]
+secret = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
+priority = 2
+
+[tokens.AWS]
+secret = "MFRGGZDFMZTWQ2LK"
 ```
 
-Each token entry consists of a name (shown in the menu) and a base32-encoded secret.
+Each token entry consists of:
+- **name**: The token identifier (shown in the menu)
+- **secret**: The base32-encoded secret
+- **priority** (optional): Determines the order in the menu. Tokens with priority are shown first (sorted by priority value), followed by tokens without priority (sorted alphabetically).
 
 See [example.config.toml](example.config.toml) for a template.
 

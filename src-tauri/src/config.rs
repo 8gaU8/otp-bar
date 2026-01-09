@@ -3,10 +3,17 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenData {
+    pub secret: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
-    pub tokens: HashMap<String, String>,
+    pub tokens: HashMap<String, TokenData>,
 }
 
 impl Config {
@@ -37,17 +44,37 @@ impl Config {
     }
 
     pub fn add_token(&mut self, name: String, secret: String) {
-        self.tokens.insert(name, secret);
+        self.tokens.insert(name, TokenData { secret, priority: None });
     }
 
     pub fn get_token(&self, name: &str) -> Option<&String> {
-        self.tokens.get(name)
+        self.tokens.get(name).map(|t| &t.secret)
     }
 
     pub fn list_token_names(&self) -> Vec<String> {
-        let mut names: Vec<String> = self.tokens.keys().cloned().collect();
-        names.sort();
-        names
+        let mut tokens_with_priority: Vec<(&String, i32)> = Vec::new();
+        let mut tokens_without_priority: Vec<&String> = Vec::new();
+
+        for (name, data) in &self.tokens {
+            if let Some(priority) = data.priority {
+                tokens_with_priority.push((name, priority));
+            } else {
+                tokens_without_priority.push(name);
+            }
+        }
+
+        // Sort tokens with priority by priority value
+        tokens_with_priority.sort_by_key(|(_, priority)| *priority);
+
+        // Sort tokens without priority alphabetically
+        tokens_without_priority.sort();
+
+        // Combine: prioritized tokens first, then alphabetically sorted tokens
+        let mut result = Vec::new();
+        result.extend(tokens_with_priority.iter().map(|(name, _)| (*name).clone()));
+        result.extend(tokens_without_priority.iter().map(|name| (*name).clone()));
+
+        result
     }
 }
 
@@ -72,7 +99,7 @@ mod tests {
     }
 
     #[test]
-    fn test_list_token_names() {
+    fn test_list_token_names_alphabetical() {
         let mut config = Config::default();
         config.add_token("zebra".to_string(), "SECRET1".to_string());
         config.add_token("apple".to_string(), "SECRET2".to_string());
@@ -80,6 +107,29 @@ mod tests {
         
         let names = config.list_token_names();
         assert_eq!(names, vec!["apple", "banana", "zebra"]);
+    }
+
+    #[test]
+    fn test_list_token_names_with_priority() {
+        let mut config = Config::default();
+        
+        // Add tokens with priority
+        config.tokens.insert("token_b".to_string(), TokenData {
+            secret: "SECRET2".to_string(),
+            priority: Some(3),
+        });
+        config.tokens.insert("token_a".to_string(), TokenData {
+            secret: "SECRET1".to_string(),
+            priority: Some(1),
+        });
+        
+        // Add tokens without priority
+        config.add_token("zebra".to_string(), "SECRET4".to_string());
+        config.add_token("apple".to_string(), "SECRET5".to_string());
+        
+        let names = config.list_token_names();
+        // Prioritized tokens first (sorted by priority), then alphabetically sorted tokens
+        assert_eq!(names, vec!["token_a", "token_b", "apple", "zebra"]);
     }
 
     #[test]
@@ -93,7 +143,10 @@ mod tests {
         // Create and save config
         let mut config = Config::default();
         config.add_token("token1".to_string(), "JBSWY3DPEHPK3PXP".to_string());
-        config.add_token("token2".to_string(), "HXDMVJECJJWSRB3H".to_string());
+        config.tokens.insert("token2".to_string(), TokenData {
+            secret: "HXDMVJECJJWSRB3H".to_string(),
+            priority: Some(1),
+        });
         
         config.save(&config_path).expect("Failed to save config");
         
@@ -102,6 +155,7 @@ mod tests {
         
         assert_eq!(loaded_config.get_token("token1"), Some(&"JBSWY3DPEHPK3PXP".to_string()));
         assert_eq!(loaded_config.get_token("token2"), Some(&"HXDMVJECJJWSRB3H".to_string()));
+        assert_eq!(loaded_config.tokens.get("token2").unwrap().priority, Some(1));
         
         // Clean up
         let _ = fs::remove_file(&config_path);
