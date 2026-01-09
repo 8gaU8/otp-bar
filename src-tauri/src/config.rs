@@ -71,8 +71,8 @@ impl Config {
 
         // Combine: prioritized tokens first, then alphabetically sorted tokens
         let mut result = Vec::new();
-        result.extend(tokens_with_priority.iter().map(|(name, _)| (*name).clone()));
-        result.extend(tokens_without_priority.iter().map(|name| (*name).clone()));
+        result.extend(tokens_with_priority.into_iter().map(|(name, _)| name.clone()));
+        result.extend(tokens_without_priority.into_iter().map(|name| name.clone()));
 
         result
     }
