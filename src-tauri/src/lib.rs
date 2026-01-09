@@ -107,13 +107,15 @@ async fn copy_otp_to_clipboard(app: AppHandle, id: String) -> Result<(), String>
         .write_text(otp)
         .map_err(|e| format!("Failed to write to clipboard: {}", e))?;
 
-    // Increment usage count
+    // Increment usage count and save config
+    // Note: We perform I/O on every copy to ensure usage data is persisted immediately.
+    // This is acceptable for a menu bar app with occasional usage (not high-frequency).
     let config_path = get_config_file_path();
     let mut config = Config::load(&config_path).unwrap_or_default();
     config.increment_usage(&id);
     config.save(&config_path)?;
 
-    // Reload menu to reflect updated sorting
+    // Reload menu to reflect updated sorting based on new usage count
     reload_menu(&app);
 
     Ok(())

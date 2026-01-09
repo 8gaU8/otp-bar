@@ -84,25 +84,18 @@ impl Config {
         // 2. Priority (ascending) - lower priority values first
         // 3. Name (alphabetically)
         tokens.sort_by(|(name_a, data_a), (name_b, data_b)| {
-            // First, compare usage counts (descending - higher usage first)
-            match data_b.usage_count.cmp(&data_a.usage_count) {
-                std::cmp::Ordering::Equal => {
-                    // If usage counts are equal, compare priority
-                    match (&data_a.priority, &data_b.priority) {
-                        (Some(p_a), Some(p_b)) => {
-                            // Both have priority, sort by priority value (ascending)
-                            match p_a.cmp(p_b) {
-                                std::cmp::Ordering::Equal => name_a.cmp(name_b),
-                                other => other,
-                            }
-                        }
-                        (Some(_), None) => std::cmp::Ordering::Less, // prioritized comes first
-                        (None, Some(_)) => std::cmp::Ordering::Greater,
-                        (None, None) => name_a.cmp(name_b), // both have no priority, sort alphabetically
-                    }
-                }
-                other => other,
-            }
+            // Create sort keys as tuples for cleaner comparison
+            let key_a = (
+                std::cmp::Reverse(data_a.usage_count), // Reverse for descending order
+                data_a.priority.unwrap_or(i32::MAX),    // None priority sorts last
+                name_a,
+            );
+            let key_b = (
+                std::cmp::Reverse(data_b.usage_count),
+                data_b.priority.unwrap_or(i32::MAX),
+                name_b,
+            );
+            key_a.cmp(&key_b)
         });
 
         tokens.into_iter().map(|(name, _)| name.clone()).collect()
