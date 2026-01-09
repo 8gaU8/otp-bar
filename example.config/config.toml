@@ -1,0 +1,10 @@
+[tokens."Google Account"]
+secret = "SOMETOKENVAL1234"
+priority = 1
+
+[tokens.GitHub]
+secret = "WXYZ1234ABCD9876"
+priority = 2
+
+[tokens.AWS]
+secret = "AAWWWAAWZZ99ZZ99"
