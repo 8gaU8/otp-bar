@@ -8,6 +8,8 @@ pub struct TokenData {
     pub secret: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[serde(default)]
+    pub usage_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -59,8 +61,15 @@ impl Config {
             TokenData {
                 secret,
                 priority: None,
+                usage_count: 0,
             },
         );
+    }
+
+    pub fn increment_usage(&mut self, name: &str) {
+        if let Some(token_data) = self.tokens.get_mut(name) {
+            token_data.usage_count += 1;
+        }
     }
 
     pub fn get_token(&self, name: &str) -> Option<&String> {
@@ -68,33 +77,35 @@ impl Config {
     }
 
     pub fn list_token_names(&self) -> Vec<String> {
-        let mut tokens_with_priority: Vec<(&String, i32)> = Vec::new();
-        let mut tokens_without_priority: Vec<&String> = Vec::new();
+        let mut tokens: Vec<(&String, &TokenData)> = self.tokens.iter().collect();
 
-        for (name, data) in &self.tokens {
-            if let Some(priority) = data.priority {
-                tokens_with_priority.push((name, priority));
-            } else {
-                tokens_without_priority.push(name);
+        // Sort by:
+        // 1. Usage count (descending) - most used first
+        // 2. Priority (ascending) - lower priority values first
+        // 3. Name (alphabetically)
+        tokens.sort_by(|(name_a, data_a), (name_b, data_b)| {
+            // First, compare usage counts (descending - higher usage first)
+            match data_b.usage_count.cmp(&data_a.usage_count) {
+                std::cmp::Ordering::Equal => {
+                    // If usage counts are equal, compare priority
+                    match (&data_a.priority, &data_b.priority) {
+                        (Some(p_a), Some(p_b)) => {
+                            // Both have priority, sort by priority value (ascending)
+                            match p_a.cmp(p_b) {
+                                std::cmp::Ordering::Equal => name_a.cmp(name_b),
+                                other => other,
+                            }
+                        }
+                        (Some(_), None) => std::cmp::Ordering::Less, // prioritized comes first
+                        (None, Some(_)) => std::cmp::Ordering::Greater,
+                        (None, None) => name_a.cmp(name_b), // both have no priority, sort alphabetically
+                    }
+                }
+                other => other,
             }
-        }
+        });
 
-        // Sort tokens with priority by priority value
-        tokens_with_priority.sort_by_key(|(_, priority)| *priority);
-
-        // Sort tokens without priority alphabetically
-        tokens_without_priority.sort();
-
-        // Combine: prioritized tokens first, then alphabetically sorted tokens
-        let mut result = Vec::new();
-        result.extend(
-            tokens_with_priority
-                .into_iter()
-                .map(|(name, _)| name.clone()),
-        );
-        result.extend(tokens_without_priority.into_iter().map(|name| name.clone()));
-
-        result
+        tokens.into_iter().map(|(name, _)| name.clone()).collect()
     }
 }
 
@@ -139,6 +150,7 @@ mod tests {
             TokenData {
                 secret: "SECRET2".to_string(),
                 priority: Some(3),
+                usage_count: 0,
             },
         );
         config.tokens.insert(
@@ -146,6 +158,7 @@ mod tests {
             TokenData {
                 secret: "SECRET1".to_string(),
                 priority: Some(1),
+                usage_count: 0,
             },
         );
 
@@ -174,6 +187,7 @@ mod tests {
             TokenData {
                 secret: "HXDMVJECJJWSRB3H".to_string(),
                 priority: Some(1),
+                usage_count: 0,
             },
         );
 
@@ -209,5 +223,99 @@ mod tests {
 
         let config = Config::load(&config_path).expect("Should return default config");
         assert_eq!(config.tokens.len(), 0);
+    }
+
+    #[test]
+    fn test_increment_usage() {
+        let mut config = Config::default();
+        config.add_token("test".to_string(), "SECRET123".to_string());
+
+        // Check initial usage count
+        assert_eq!(config.tokens.get("test").unwrap().usage_count, 0);
+
+        // Increment usage
+        config.increment_usage("test");
+        assert_eq!(config.tokens.get("test").unwrap().usage_count, 1);
+
+        config.increment_usage("test");
+        assert_eq!(config.tokens.get("test").unwrap().usage_count, 2);
+
+        // Incrementing non-existent token should not panic
+        config.increment_usage("nonexistent");
+    }
+
+    #[test]
+    fn test_list_token_names_with_usage_count() {
+        let mut config = Config::default();
+
+        // Add tokens with different usage counts
+        config.tokens.insert(
+            "token_a".to_string(),
+            TokenData {
+                secret: "SECRET1".to_string(),
+                priority: None,
+                usage_count: 5,
+            },
+        );
+        config.tokens.insert(
+            "token_b".to_string(),
+            TokenData {
+                secret: "SECRET2".to_string(),
+                priority: None,
+                usage_count: 10,
+            },
+        );
+        config.tokens.insert(
+            "token_c".to_string(),
+            TokenData {
+                secret: "SECRET3".to_string(),
+                priority: None,
+                usage_count: 2,
+            },
+        );
+
+        let names = config.list_token_names();
+        // Should be sorted by usage count (descending): token_b (10), token_a (5), token_c (2)
+        assert_eq!(names, vec!["token_b", "token_a", "token_c"]);
+    }
+
+    #[test]
+    fn test_list_token_names_with_usage_and_priority() {
+        let mut config = Config::default();
+
+        // Token with high usage but no priority
+        config.tokens.insert(
+            "frequently_used".to_string(),
+            TokenData {
+                secret: "SECRET1".to_string(),
+                priority: None,
+                usage_count: 100,
+            },
+        );
+        
+        // Token with low usage and priority
+        config.tokens.insert(
+            "priority_token".to_string(),
+            TokenData {
+                secret: "SECRET2".to_string(),
+                priority: Some(1),
+                usage_count: 5,
+            },
+        );
+        
+        // Token with medium usage and no priority
+        config.tokens.insert(
+            "sometimes_used".to_string(),
+            TokenData {
+                secret: "SECRET3".to_string(),
+                priority: None,
+                usage_count: 50,
+            },
+        );
+
+        let names = config.list_token_names();
+        // Should be sorted by usage count first (descending)
+        // frequently_used (100) -> sometimes_used (50) -> priority_token (5)
+        assert_eq!(names, vec!["frequently_used", "sometimes_used", "priority_token"]);
     }
 }

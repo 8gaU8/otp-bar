@@ -107,11 +107,21 @@ async fn copy_otp_to_clipboard(app: AppHandle, id: String) -> Result<(), String>
         .write_text(otp)
         .map_err(|e| format!("Failed to write to clipboard: {}", e))?;
 
+    // Increment usage count
+    let config_path = get_config_file_path();
+    let mut config = Config::load(&config_path).unwrap_or_default();
+    config.increment_usage(&id);
+    config.save(&config_path)?;
+
+    // Reload menu to reflect updated sorting
+    reload_menu(&app);
+
     Ok(())
 }
 
-fn get_otp_text(id: &String, otp: &String) -> String {
-    format!("{}: {}", otp, id)
+fn get_otp_text(id: &String, otp: &String, max_name_len: usize) -> String {
+    // Pad the name to max_name_len for justified alignment
+    format!("{:width$}: {}", id, otp, width = max_name_len)
 }
 
 fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>, String> {
@@ -158,11 +168,14 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
         .item(&timer_item)
         .item(&separator);
 
+    // Calculate max name length for alignment
+    let max_name_len = token_ids.iter().map(|id| id.len()).max().unwrap_or(0);
+
     // Add token items
     for id in token_ids {
         let token = read_token(id).unwrap_or_default();
         let otp = generate_otp(&token).unwrap_or_else(|_| "ERROR".to_string());
-        let text = get_otp_text(&id, &otp);
+        let text = get_otp_text(&id, &otp, max_name_len);
 
         let item = MenuItemBuilder::new(text)
             .id(id)
@@ -204,11 +217,13 @@ async fn update_menu_periodically(app: AppHandle) {
             println!("OTP period reset detected, updating all OTP codes");
 
             let token_ids = list_token_ids();
+            let max_name_len = token_ids.iter().map(|id| id.len()).max().unwrap_or(0);
+            
             for id in &token_ids {
                 if let Some(menu_item) = menu_handle.get(id) {
                     if let Ok(token) = read_token(id) {
                         if let Ok(otp) = generate_otp(&token) {
-                            let text = get_otp_text(&id, &otp);
+                            let text = get_otp_text(&id, &otp, max_name_len);
                             if let MenuItemKind::MenuItem(item) = menu_item {
                                 let _ = item.set_text(text);
                             }
