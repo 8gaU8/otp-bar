@@ -19,7 +19,7 @@ fn get_config_dir() -> PathBuf {
     let home = dirs::home_dir().expect("Could not find home directory");
     let config_dir = home.join(".config/otp-bar");
 
-    if ! config_dir.exists() {
+    if !config_dir.exists() {
         fs::create_dir_all(&config_dir).expect("Could not create config directory");
     }
     config_dir
@@ -39,7 +39,7 @@ fn list_token_ids() -> Vec<String> {
 fn read_token(id: &str) -> Result<String, String> {
     let config_path = get_config_file_path();
     let config = Config::load(&config_path)?;
-    
+
     config
         .get_token(id)
         .cloned()
@@ -52,10 +52,10 @@ fn write_token(user_name: &str, token: &str) -> Result<(), String> {
         eprintln!("Warning: Failed to load config ({}), using default", e);
         Config::default()
     });
-    
+
     config.add_token(user_name.to_string(), token.to_string());
     config.save(&config_path)?;
-    
+
     Ok(())
 }
 
@@ -106,14 +106,23 @@ async fn copy_otp_to_clipboard(app: AppHandle, id: String) -> Result<(), String>
     Ok(())
 }
 
+fn get_otp_text(id: &String, otp: &String) -> String {
+    format!("{}: {}", otp, id)
+}
+
 fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>, String> {
     let menu = MenuBuilder::new(app);
 
     // Configure item
-    let configure_item = MenuItemBuilder::new("Configure (restart automatically)")
+    let configure_item = MenuItemBuilder::new("Load QR code (restart app)")
         .id("configure")
         .build(app)
         .map_err(|e| format!("Failed to create configure menu item: {}", e))?;
+
+    let restart_item = MenuItemBuilder::new("Apply config (restarts app)")
+        .id("restart")
+        .build(app)
+        .map_err(|e| format!("Failed to create restart menu item: {}", e))?;
 
     // Quit item
     let quit_item = PredefinedMenuItem::quit(app, Some("Quit"))
@@ -133,6 +142,7 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
 
     let mut menu = menu
         .item(&configure_item)
+        .item(&restart_item)
         .item(&quit_item)
         .item(&separator)
         .item(&timer_item)
@@ -142,7 +152,7 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
     for id in token_ids {
         let token = read_token(id).unwrap_or_default();
         let otp = generate_otp(&token).unwrap_or_else(|_| "ERROR".to_string());
-        let text = format!("{}: {}", id, otp);
+        let text = get_otp_text(&id, &otp);
 
         let item = MenuItemBuilder::new(text)
             .id(id)
@@ -181,7 +191,7 @@ async fn update_menu_periodically(menu: Menu<Wry>) {
                 if let Some(menu_item) = menu.get(id) {
                     if let Ok(token) = read_token(id) {
                         if let Ok(otp) = generate_otp(&token) {
-                            let text = format!("{}: {}", id, otp);
+                            let text = get_otp_text(&id, &otp);
                             if let MenuItemKind::MenuItem(item) = menu_item {
                                 let _ = item.set_text(text);
                             }
@@ -225,6 +235,13 @@ pub fn run() {
                             if let Err(e) = handle_configure(app_clone).await {
                                 eprintln!("Configuration error: {}", e);
                             }
+                        });
+                    } else if item_id == "restart" {
+                        // Restart the application
+                        // Clone it before restart the app to avoid modification of item position on the menu bar
+                        let app_clone = app.clone();
+                        tauri::async_runtime::spawn(async move {
+                            app_clone.restart();
                         });
                     } else if item_id != "timer" {
                         // It's a token ID
