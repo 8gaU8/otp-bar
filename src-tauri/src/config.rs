@@ -17,10 +17,24 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(config_path: &PathBuf) -> Result<Self, String> {
+    fn ensure_config_exists(config_path: &PathBuf) -> Result<(), String> {
         if !config_path.exists() {
-            return Ok(Config::default());
+            fs::create_dir_all(
+                config_path
+                    .parent()
+                    .ok_or("Failed to get parent directory of config path")?,
+            )
+            .map_err(|e| format!("Failed to create config directory: {}", e))?;
+            fs::write(config_path, "")
+                .map_err(|e| format!("Failed to create empty config file: {}", e))?;
         }
+        println!("Config file exists at {:?}", config_path);
+        Ok(())
+    }
+
+    pub fn load(config_path: &PathBuf) -> Result<Self, String> {
+        Self::ensure_config_exists(config_path)
+            .map_err(|e| format!("Failed to ensure config exists: {}", e))?;
 
         let content = fs::read_to_string(config_path)
             .map_err(|e| format!("Failed to read config file: {}", e))?;
@@ -30,10 +44,8 @@ impl Config {
 
     pub fn save(&self, config_path: &PathBuf) -> Result<(), String> {
         // Ensure parent directory exists
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create config directory: {}", e))?;
-        }
+        Self::ensure_config_exists(config_path)
+            .map_err(|e| format!("Failed to ensure config exists: {}", e))?;
 
         let content = toml::to_string_pretty(self)
             .map_err(|e| format!("Failed to serialize config to TOML: {}", e))?;
