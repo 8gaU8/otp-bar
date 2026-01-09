@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 
 # Params
-LATEST_VERSION='1.0.0'
+LATEST_VERSION='1.1.0'
 
 VERSION="${APP_VERSION:-${LATEST_VERSION}}"
 TAG="app-v${VERSION}"
@@ -14,7 +14,7 @@ TMP_DMG='/tmp/otp-bar.dmg'
 
 # Install APP
 echo 'Downloading App DMG...'
-wget "https://github.com/8gaU8/otp-bar/releases/download/${TAG}/OTP.Bar_${VERSION}_${ARCH}.dmg" -O "${TMP_DMG}"
+wget "https://github.com/8gaU8/otp-bar/releases/download/${TAG}/OTP.Bar_${VERSION}_${ARCH}.dmg?" -O "${TMP_DMG}"
 xattr -d com.apple.quarantine "${TMP_DMG}" || true
 hdiutil attach "${TMP_DMG}"
 cp -R "/Volumes/OTP Bar/OTP Bar.app" /Applications/
