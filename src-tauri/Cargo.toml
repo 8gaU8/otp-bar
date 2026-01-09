@@ -1,6 +1,6 @@
 [package]
 name = "otp-bar"
-version = "1.0.0"
+version = "1.1.0"
 description = "This simple menu bar app tells you OTP and saves it in the clipboard"
 authors = ["8gaU8"]
 edition = "2021"
