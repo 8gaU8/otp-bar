@@ -61,8 +61,8 @@ mod tests {
 
     #[test]
     fn test_compare_with_oathtool() {
-        use totp_lite::{totp_custom, Sha1};
         use data_encoding::BASE32_NOPAD;
+        use totp_lite::{totp_custom, Sha1};
 
         // Secret: GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ (RFC 6238 test vector)
         let secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";

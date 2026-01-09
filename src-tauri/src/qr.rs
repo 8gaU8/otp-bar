@@ -188,7 +188,8 @@ fn parse_otp_parameter(data: &[u8]) -> Result<TokenData, String> {
                         if i < data.len() {
                             let (length, bytes_read) = decode_varint(&data[i..])?;
                             if i + bytes_read + length > data.len() {
-                                return Err("Invalid protobuf data: field extends beyond buffer".to_string());
+                                return Err("Invalid protobuf data: field extends beyond buffer"
+                                    .to_string());
                             }
                             i += bytes_read + length;
                         }
