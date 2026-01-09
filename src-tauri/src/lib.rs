@@ -1,10 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItemBuilder, MenuItemKind, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    ActivationPolicy, AppHandle, Wry,
+    ActivationPolicy, AppHandle, Manager, Wry,
 };
 use tauri_plugin_dialog::FilePath;
 
@@ -14,6 +15,8 @@ mod qr;
 
 use config::Config;
 use otp::{generate_otp, get_otp_remaining_time, is_otp_in_warning_period};
+
+struct MenuState(Mutex<Menu<Wry>>);
 
 fn get_config_dir() -> PathBuf {
     let home = dirs::home_dir().expect("Could not find home directory");
@@ -88,7 +91,7 @@ async fn handle_configure(app: AppHandle) -> Result<(), String> {
         }
 
         // Restart the application
-        app.restart();
+        reload_menu(&app);
     }
 
     Ok(())
@@ -114,13 +117,13 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
     let menu = MenuBuilder::new(app);
 
     // Configure item
-    let configure_item = MenuItemBuilder::new("Load QR code (restart app)")
+    let configure_item = MenuItemBuilder::new("Load QR code")
         .id("configure")
         .build(app)
         .map_err(|e| format!("Failed to create configure menu item: {}", e))?;
 
-    let restart_item = MenuItemBuilder::new("Apply config (restarts app)")
-        .id("restart")
+    let restart_item = MenuItemBuilder::new("Apply config")
+        .id("reload")
         .build(app)
         .map_err(|e| format!("Failed to create restart menu item: {}", e))?;
 
@@ -166,7 +169,7 @@ fn create_menu(app: &AppHandle, token_ids: &[String]) -> Result<Menu<tauri::Wry>
         .map_err(|e| format!("Failed to build menu: {}", e))
 }
 
-async fn update_menu_periodically(menu: Menu<Wry>) {
+async fn update_menu_periodically(app: AppHandle) {
     let mut previous_remaining_time = get_otp_remaining_time();
 
     loop {
@@ -174,9 +177,16 @@ async fn update_menu_periodically(menu: Menu<Wry>) {
 
         let current_remaining_time = get_otp_remaining_time();
 
+        // Get current menu from state
+        let menu_handle = {
+            let state = app.state::<MenuState>();
+            let menu = state.0.lock().unwrap();
+            menu.clone()
+        };
+
         // Update timer display
         let timer_text = get_timer_display_text();
-        if let Some(menu_item) = menu.get("timer") {
+        if let Some(menu_item) = menu_handle.get("timer") {
             if let MenuItemKind::MenuItem(item) = menu_item {
                 let _ = item.set_text(timer_text);
             }
@@ -188,7 +198,7 @@ async fn update_menu_periodically(menu: Menu<Wry>) {
 
             let token_ids = list_token_ids();
             for id in &token_ids {
-                if let Some(menu_item) = menu.get(id) {
+                if let Some(menu_item) = menu_handle.get(id) {
                     if let Ok(token) = read_token(id) {
                         if let Ok(otp) = generate_otp(&token) {
                             let text = get_otp_text(&id, &otp);
@@ -205,66 +215,92 @@ async fn update_menu_periodically(menu: Menu<Wry>) {
     }
 }
 
+fn reload_menu(app: &AppHandle) {
+    match list_token_ids() {
+        token_ids => {
+            match create_menu(app, &token_ids) {
+                Ok(new_menu) => {
+                    if let Some(tray) = app.tray_by_id("main") {
+                        if let Err(e) = tray.set_menu::<Menu<Wry>>(Some(new_menu.clone())) {
+                            eprintln!("Failed to update tray menu: {}", e);
+                        } else {
+                            // Update state
+                            let state = app.state::<MenuState>();
+                            *state.0.lock().unwrap() = new_menu;
+                            println!("Menu updated successfully");
+                        }
+                    } else {
+                        eprintln!("Main tray icon not found");
+                    }
+                }
+                Err(e) => eprintln!("Failed to create new menu: {}", e),
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_dialog::init())
-        .setup(|app| {
-            // Dockアイコンを非表示に
-            #[cfg(target_os = "macos")]
-            app.set_activation_policy(ActivationPolicy::Accessory);
+    .plugin(tauri_plugin_clipboard_manager::init())
+    .plugin(tauri_plugin_dialog::init())
+    .setup(|app| {
+        // Dockアイコンを非表示に
+        #[cfg(target_os = "macos")]
+        app.set_activation_policy(ActivationPolicy::Accessory);
 
-            // Create tray icon
-            let token_ids = list_token_ids();
-            let menu = create_menu(app.handle(), &token_ids).expect("Failed to create menu");
+        // Create initial menu
+        let token_ids = list_token_ids();
+        let menu = create_menu(app.handle(), &token_ids).expect("Failed to create menu");
 
-            let _tray = TrayIconBuilder::new()
-                .menu(&menu)
-                .icon(
-                    app.default_window_icon()
-                        .expect("Failed to get default window icon for tray; ensure a window icon is configured in the Tauri bundle")
-                        .clone(),
-                )
-                .on_menu_event(move |app, event| {
-                    let item_id = event.id().as_ref();
+        // Manage menu state
+        app.manage(MenuState(Mutex::new(menu.clone())));
 
-                    if item_id == "configure" {
-                        let app_clone = app.clone();
-                        tauri::async_runtime::spawn(async move {
-                            if let Err(e) = handle_configure(app_clone).await {
-                                eprintln!("Configuration error: {}", e);
-                            }
-                        });
-                    } else if item_id == "restart" {
-                        // Restart the application
-                        // Clone it before restart the app to avoid modification of item position on the menu bar
-                        let app_clone = app.clone();
-                        tauri::async_runtime::spawn(async move {
-                            app_clone.restart();
-                        });
-                    } else if item_id != "timer" {
-                        // It's a token ID
-                        let id = item_id.to_string();
-                        let app_clone = app.clone();
-                        tauri::async_runtime::spawn(async move {
-                            if let Err(e) = copy_otp_to_clipboard(app_clone, id).await {
-                                eprintln!("Failed to copy OTP: {}", e);
-                            }
-                        });
-                    }
-                })
-                .build(app)
-                .expect("Failed to create tray icon");
+        let _tray = TrayIconBuilder::with_id("main")
+            .menu(&menu)
+            .icon(
+                app.default_window_icon()
+                    .expect("Failed to get default window icon for tray; ensure a window icon is configured in the Tauri bundle")
+                    .clone(),
+            )
+            .on_menu_event(move |app: &AppHandle, event: tauri::menu::MenuEvent| {
+                let item_id = event.id().as_ref();
 
-            // Start periodic update task
-            let menu_handle = menu.clone();
-            tauri::async_runtime::spawn(async move {
-                update_menu_periodically(menu_handle).await;
-            });
+                if item_id == "configure" {
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = handle_configure(app_clone).await {
+                            eprintln!("Configuration error: {}", e);
+                        }
+                    });
+                } else if item_id == "reload" {
+                    println!("Reloading config...");
+                    // let app_clone = app.clone();
+                    // Reload config and update menu
+                    reload_menu(app);
 
-            Ok(())
-        })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+                } else if item_id != "timer" {
+                    // It's a token ID
+                    let id = item_id.to_string();
+                    let app_clone = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(e) = copy_otp_to_clipboard(app_clone, id).await {
+                            eprintln!("Failed to copy OTP: {}", e);
+                        }
+                    });
+                }
+            })
+            .build(app)
+            .expect("Failed to create tray icon");
+
+        // Start periodic update task
+        let app_handle = app.handle().clone();
+        tauri::async_runtime::spawn(async move {
+            update_menu_periodically(app_handle).await;
+        });
+
+        Ok(())
+    })
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }
