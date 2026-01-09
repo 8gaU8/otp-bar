@@ -86,13 +86,13 @@ impl Config {
         tokens.sort_by(|(name_a, data_a), (name_b, data_b)| {
             // Create sort keys as tuples for cleaner comparison
             let key_a = (
-                std::cmp::Reverse(data_a.usage_count), // Reverse for descending order
                 data_a.priority.unwrap_or(i32::MAX),    // None priority sorts last
+                std::cmp::Reverse(data_a.usage_count), // Reverse for descending order
                 name_a,
             );
             let key_b = (
-                std::cmp::Reverse(data_b.usage_count),
                 data_b.priority.unwrap_or(i32::MAX),
+                std::cmp::Reverse(data_b.usage_count),
                 name_b,
             );
             key_a.cmp(&key_b)
