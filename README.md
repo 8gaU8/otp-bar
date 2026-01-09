@@ -55,4 +55,8 @@ You can also manually edit the `config.toml` file:
 Each token entry consists of a name (shown in the menu) and a base32-encoded secret.
 
 See [example.config.toml](example.config.toml) for a template.
+
+### Migrating from Old Configuration
+
+If you were using an older version of OTP Bar with individual token files, see [MIGRATION.md](MIGRATION.md) for instructions on migrating to the new TOML format.
   
