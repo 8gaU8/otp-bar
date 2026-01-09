@@ -2815,6 +2815,7 @@ dependencies = [
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-dialog",
  "tokio",
+ "toml 0.8.2",
  "totp-lite",
  "url",
  "urlencoding",

@@ -8,9 +8,11 @@ use tauri::{
 };
 use tauri_plugin_dialog::FilePath;
 
+mod config;
 mod otp;
 mod qr;
 
+use config::Config;
 use otp::{generate_otp, get_otp_remaining_time, is_otp_in_warning_period};
 
 fn get_config_dir() -> PathBuf {
@@ -23,42 +25,35 @@ fn get_config_dir() -> PathBuf {
     config_dir
 }
 
+fn get_config_file_path() -> PathBuf {
+    get_config_dir().join("config.toml")
+}
+
 fn list_token_ids() -> Vec<String> {
-    let config_dir = get_config_dir();
-    let mut token_ids = Vec::new();
-
-    if let Ok(entries) = fs::read_dir(&config_dir) {
-        for entry in entries.flatten() {
-            if let Ok(file_name) = entry.file_name().into_string() {
-                if file_name != "config.json" {
-                    token_ids.push(file_name);
-                }
-            }
-        }
-    }
-
-    token_ids.sort();
-    token_ids
+    let config_path = get_config_file_path();
+    Config::load(&config_path)
+        .map(|config| config.list_token_names())
+        .unwrap_or_default()
 }
 
 fn read_token(id: &str) -> Result<String, String> {
-    let config_dir = get_config_dir();
-    let token_path = config_dir.join(id);
-
-    fs::read_to_string(&token_path)
-        .map(|s| s.trim().to_string())
-        .map_err(|e| format!("Failed to read token: {}", e))
+    let config_path = get_config_file_path();
+    let config = Config::load(&config_path)?;
+    
+    config
+        .get_token(id)
+        .cloned()
+        .ok_or_else(|| format!("Token '{}' not found", id))
 }
 
-fn write_token_file(user_name: &str, token: &str) -> Result<(), String> {
-    let config_dir = get_config_dir();
-    let file_path = config_dir.join(user_name);
-
-    if file_path.exists() {
-        return Ok(()); // Skip if already exists
-    }
-
-    fs::write(&file_path, token).map_err(|e| format!("Failed to write token file: {}", e))
+fn write_token(user_name: &str, token: &str) -> Result<(), String> {
+    let config_path = get_config_file_path();
+    let mut config = Config::load(&config_path).unwrap_or_default();
+    
+    config.add_token(user_name.to_string(), token.to_string());
+    config.save(&config_path)?;
+    
+    Ok(())
 }
 
 fn get_timer_display_text() -> String {
@@ -86,7 +81,7 @@ async fn handle_configure(app: AppHandle) -> Result<(), String> {
         let tokens = qr::parse_qr_and_extract_tokens(&file_path_str)?;
 
         for token_data in tokens {
-            write_token_file(&token_data.name, &token_data.secret)?;
+            write_token(&token_data.name, &token_data.secret)?;
         }
 
         // Restart the application

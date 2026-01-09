@@ -1,0 +1,7 @@
+# OTP Bar Configuration File
+# This file contains your OTP tokens
+# Replace YOURTOKENHERE with your actual base32-encoded secrets
+
+[tokens]
+token1 = "YOURTOKENHERE"
+token2 = "YOURTOKENHERE"

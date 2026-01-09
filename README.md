@@ -30,22 +30,29 @@ curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/instal
 
 ```
 $HOME/.config/otp-bar
-├── token1
-├── token2
-├── token3
-.
-.
+└── config.toml
 ```
 
-### Token files
+### Configuration File
+
+The application now uses a TOML configuration file at `$HOME/.config/otp-bar/config.toml`.
+
+#### Adding tokens via QR code
 
 - Upload an image file (JPEG or PNG) of an exported QR code from Google Authenticator App using the "Configure" menu option.
-- Or save token as a plain text file under `$HOME/.config/otp-bar/`
-- Example:
+- The tokens will be automatically added to the `config.toml` file.
+
+#### Manual configuration
+
+You can also manually edit the `config.toml` file:
+
+```toml
+[tokens]
+"Google Account" = "JBSWY3DPEHPK3PXP"
+"GitHub" = "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
 ```
-$ cat token1
-***YOURTOKEN1**
-$ cat token2
-***YOURTOKEN2**
-```
+
+Each token entry consists of a name (shown in the menu) and a base32-encoded secret.
+
+See [example.config.toml](example.config.toml) for a template.
   
