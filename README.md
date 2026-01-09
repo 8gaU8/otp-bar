@@ -7,7 +7,7 @@ A menu bar application for one time passwords, implemented in Rust.
 Simply, run the following command
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/refs/heads/main/install.sh | /bin/bash
+curl -sSL https://raw.githubusercontent.com/8gaU8/otp-bar/main/install.sh?v1.1.0 | /bin/bash
 ```
 
 ## Manual Installation

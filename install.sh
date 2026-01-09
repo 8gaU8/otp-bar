@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 
 # Params
-LATEST_VERSION='1.0.0'
+LATEST_VERSION='1.1.0'
 
 VERSION="${APP_VERSION:-${LATEST_VERSION}}"
 TAG="app-v${VERSION}"
