@@ -281,6 +281,7 @@ fn handle_cli_show(token_id: Option<&str>) -> Result<(), String> {
     println!("Showing OTP for: {}", token_id);
     println!("Press Ctrl+C to stop\n");
 
+    // Loop continuously until user interrupts with Ctrl+C
     loop {
         let otp_code = generate_otp(secret)?;
         let remaining_time = get_otp_remaining_time();
@@ -305,11 +306,7 @@ fn handle_cli_clip(token_id: Option<&str>) -> Result<(), String> {
 
     let otp_code = generate_otp(secret)?;
 
-    // Use clipboard plugin via Tauri's clipboard manager
-    // For CLI mode, we'll use a simple approach - just print the code
-    // and let the user copy it manually, or we could use a system command
-    
-    // For macOS, we can use pbcopy
+    // Copy to clipboard using platform-specific approach
     #[cfg(target_os = "macos")]
     {
         use std::process::{Command, Stdio};
@@ -319,7 +316,6 @@ fn handle_cli_clip(token_id: Option<&str>) -> Result<(), String> {
             .map_err(|e| format!("Failed to spawn pbcopy: {}", e))?;
         
         if let Some(mut stdin) = child.stdin.take() {
-            use std::io::Write;
             stdin
                 .write_all(otp_code.as_bytes())
                 .map_err(|e| format!("Failed to write to pbcopy: {}", e))?;
@@ -328,15 +324,16 @@ fn handle_cli_clip(token_id: Option<&str>) -> Result<(), String> {
         child
             .wait()
             .map_err(|e| format!("Failed to wait for pbcopy: {}", e))?;
+        
+        println!("Copied OTP for '{}' to clipboard: {}", token_id, otp_code);
     }
 
-    // For other platforms, just print
+    // For other platforms, display code for manual copying
     #[cfg(not(target_os = "macos"))]
     {
-        println!("OTP code (copy manually): {}", otp_code);
+        println!("OTP code for '{}': {}", token_id, otp_code);
+        println!("(Automatic clipboard copy not supported on this platform - please copy manually)");
     }
-
-    println!("Copied OTP for '{}' to clipboard: {}", token_id, otp_code);
 
     Ok(())
 }
