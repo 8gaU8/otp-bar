@@ -10,8 +10,8 @@ use tauri::{
 use tauri_plugin_dialog::FilePath;
 use tauri_plugin_opener::OpenerExt;
 
-mod config;
-mod otp;
+pub mod config;
+pub mod otp;
 mod qr;
 
 use config::Config;
@@ -19,7 +19,7 @@ use otp::{generate_otp, get_otp_remaining_time, is_otp_in_warning_period};
 
 struct MenuState(Mutex<Menu<Wry>>);
 
-fn get_config_dir() -> PathBuf {
+pub fn get_config_dir() -> PathBuf {
     let home = dirs::home_dir().expect("Could not find home directory");
     let config_dir = home.join(".config/otp-bar");
 
@@ -31,6 +31,10 @@ fn get_config_dir() -> PathBuf {
 
 fn get_config_file_path() -> PathBuf {
     get_config_dir().join("config.toml")
+}
+
+pub fn get_config_path() -> PathBuf {
+    get_config_file_path()
 }
 
 fn list_token_ids() -> Vec<String> {

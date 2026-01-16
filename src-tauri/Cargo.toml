@@ -34,4 +34,10 @@ urlencoding = "2.1"
 dirs = "5.0"
 tokio = { version = "1", features = ["full"] }
 tauri-plugin-opener = "2"
+clap = { version = "4", features = ["derive"] }
+arboard = "3"
+
+[[bin]]
+name = "otp-cli"
+path = "src/bin/otp-cli.rs"
 
