@@ -1,6 +1,8 @@
 use std::fs;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::thread;
 use std::time::Duration;
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItemBuilder, MenuItemKind, PredefinedMenuItem},
@@ -246,13 +248,135 @@ fn reload_menu(app: &AppHandle) {
     }
 }
 
+fn get_token_id_from_config(config: &Config, requested_id: Option<&str>) -> Result<String, String> {
+    match requested_id {
+        Some(id) => {
+            // Verify the token exists
+            if config.get_token(id).is_some() {
+                Ok(id.to_string())
+            } else {
+                Err(format!("Token '{}' not found", id))
+            }
+        }
+        None => {
+            // Get the highest priority token (first in the list)
+            config
+                .list_token_names()
+                .first()
+                .cloned()
+                .ok_or_else(|| "No tokens configured".to_string())
+        }
+    }
+}
+
+fn handle_cli_show(token_id: Option<&str>) -> Result<(), String> {
+    let config_path = get_config_file_path();
+    let config = Config::load(&config_path)?;
+
+    let token_id = get_token_id_from_config(&config, token_id)?;
+    let secret = config
+        .get_token(&token_id)
+        .ok_or_else(|| format!("Token '{}' not found", token_id))?;
+
+    println!("Showing OTP for: {}", token_id);
+    println!("Press Ctrl+C to stop\n");
+
+    // Loop continuously until user interrupts with Ctrl+C
+    loop {
+        let otp_code = generate_otp(secret)?;
+        let remaining_time = get_otp_remaining_time();
+
+        // Clear the line and print OTP with remaining time
+        print!("\r{} ({}s remaining)  ", otp_code, remaining_time);
+        io::stdout().flush().unwrap();
+
+        // Sleep for 500ms before updating
+        thread::sleep(Duration::from_millis(500));
+    }
+}
+
+fn handle_cli_clip(token_id: Option<&str>) -> Result<(), String> {
+    let config_path = get_config_file_path();
+    let config = Config::load(&config_path)?;
+
+    let token_id = get_token_id_from_config(&config, token_id)?;
+    let secret = config
+        .get_token(&token_id)
+        .ok_or_else(|| format!("Token '{}' not found", token_id))?;
+
+    let otp_code = generate_otp(secret)?;
+
+    // Copy to clipboard using platform-specific approach
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::{Command, Stdio};
+        let mut child = Command::new("pbcopy")
+            .stdin(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to spawn pbcopy: {}", e))?;
+        
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin
+                .write_all(otp_code.as_bytes())
+                .map_err(|e| format!("Failed to write to pbcopy: {}", e))?;
+        }
+        
+        child
+            .wait()
+            .map_err(|e| format!("Failed to wait for pbcopy: {}", e))?;
+        
+        println!("Copied OTP for '{}' to clipboard: {}", token_id, otp_code);
+    }
+
+    // For other platforms, display code for manual copying
+    #[cfg(not(target_os = "macos"))]
+    {
+        println!("OTP code for '{}': {}", token_id, otp_code);
+        println!("(Automatic clipboard copy not supported on this platform - please copy manually)");
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_cli::init())
     .setup(|app| {
+        // Handle CLI arguments
+        if let Ok(matches) = tauri_plugin_cli::CliExt::cli(app.handle()).matches() {
+            // Check if any CLI subcommand was used
+            if let Some(show_matches) = matches.subcommand.as_ref().and_then(|s| {
+                if s.name == "show" { Some(s) } else { None }
+            }) {
+                let token_id = show_matches.matches.args.get("token_id")
+                    .and_then(|v| v.value.as_str());
+                
+                if let Err(e) = handle_cli_show(token_id) {
+                    eprintln!("Error: {}", e);
+                    std::process::exit(1);
+                }
+                std::process::exit(0);
+            }
+
+            if let Some(clip_matches) = matches.subcommand.as_ref().and_then(|s| {
+                if s.name == "clip" { Some(s) } else { None }
+            }) {
+                let token_id = clip_matches.matches.args.get("token_id")
+                    .and_then(|v| v.value.as_str());
+                
+                if let Err(e) = handle_cli_clip(token_id) {
+                    eprintln!("Error: {}", e);
+                    std::process::exit(1);
+                }
+                std::process::exit(0);
+            }
+        }
+
+        // If no CLI subcommand, run GUI mode
         // Dockアイコンを非表示に
         #[cfg(target_os = "macos")]
         app.set_activation_policy(ActivationPolicy::Accessory);

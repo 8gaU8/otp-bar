@@ -22,5 +22,32 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "cli": {
+      "description": "OTP command line interface",
+      "subcommands": {
+        "show": {
+          "description": "Display OTP with remaining time (continuously until Ctrl+C)",
+          "args": [
+            {
+              "name": "token_id",
+              "description": "Token ID (optional - uses highest priority token if not specified)",
+              "required": false
+            }
+          ]
+        },
+        "clip": {
+          "description": "Copy OTP to clipboard and exit",
+          "args": [
+            {
+              "name": "token_id",
+              "description": "Token ID (optional - uses highest priority token if not specified)",
+              "required": false
+            }
+          ]
+        }
+      }
+    }
   }
 }
