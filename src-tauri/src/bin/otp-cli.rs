@@ -48,20 +48,27 @@ fn get_token_id(config: &Config, requested_id: Option<String>) -> Result<String,
     }
 }
 
-fn show_otp(token_id: Option<String>) -> Result<(), String> {
+fn load_token_secret(token_id: Option<String>) -> Result<(String, String), String> {
     let config_path = get_config_path();
     let config = Config::load(&config_path)?;
 
     let token_id = get_token_id(&config, token_id)?;
     let secret = config
         .get_token(&token_id)
-        .ok_or_else(|| format!("Token '{}' not found", token_id))?;
+        .ok_or_else(|| format!("Token '{}' not found", token_id))?
+        .clone();
+
+    Ok((token_id, secret))
+}
+
+fn show_otp(token_id: Option<String>) -> Result<(), String> {
+    let (token_id, secret) = load_token_secret(token_id)?;
 
     println!("Showing OTP for: {}", token_id);
     println!("Press Ctrl+C to stop\n");
 
     loop {
-        let otp_code = otp::generate_otp(secret)?;
+        let otp_code = otp::generate_otp(&secret)?;
         let remaining_time = otp::get_otp_remaining_time();
 
         // Clear the line and print OTP with remaining time
@@ -74,15 +81,9 @@ fn show_otp(token_id: Option<String>) -> Result<(), String> {
 }
 
 fn clip_otp(token_id: Option<String>) -> Result<(), String> {
-    let config_path = get_config_path();
-    let config = Config::load(&config_path)?;
+    let (token_id, secret) = load_token_secret(token_id)?;
 
-    let token_id = get_token_id(&config, token_id)?;
-    let secret = config
-        .get_token(&token_id)
-        .ok_or_else(|| format!("Token '{}' not found", token_id))?;
-
-    let otp_code = otp::generate_otp(secret)?;
+    let otp_code = otp::generate_otp(&secret)?;
 
     let mut clipboard = Clipboard::new().map_err(|e| format!("Failed to access clipboard: {}", e))?;
     clipboard
