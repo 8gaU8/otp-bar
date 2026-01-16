@@ -70,47 +70,27 @@ See [example.config.toml](example.config.toml) for a template.
 
 If you were using an older version of OTP Bar with individual token files, see [MIGRATION.md](MIGRATION.md) for instructions on migrating to the new TOML format.
 
-## CLI Tool
+## CLI Usage
 
-OTP Bar also provides a command-line interface for quick access to your OTP codes.
-
-### Installation
-
-```bash
-curl -sSL 'https://raw.githubusercontent.com/8gaU8/otp-bar/main/install-cli.sh' | /bin/bash
-```
-
-By default, the CLI is installed to `~/.local/bin/otp-cli`. You can customize the installation path:
-
-```bash
-INSTALL_PATH=/usr/local/bin curl -sSL 'https://raw.githubusercontent.com/8gaU8/otp-bar/main/install-cli.sh' | /bin/bash
-```
-
-### Building from Source
-
-```bash
-cd src-tauri
-cargo build --release --bin otp-cli
-# The binary will be at target/release/otp-cli
-```
+OTP Bar can also be used from the command line with subcommands.
 
 ### Usage
 
-The CLI has two subcommands: `show` and `clip`.
+The application supports two CLI subcommands: `show` and `clip`.
 
 #### Show OTP
 
 Display OTP code with remaining time, continuously updating until you press Ctrl+C:
 
 ```bash
-otp-cli show [token_id]
+/Applications/OTP\ Bar.app/Contents/MacOS/OTP\ Bar show [token_id]
 ```
 
 If `token_id` is not specified, the token with the highest priority will be used.
 
 Example:
 ```bash
-$ otp-cli show "Google Account"
+$ /Applications/OTP\ Bar.app/Contents/MacOS/OTP\ Bar show "Google Account"
 Showing OTP for: Google Account
 Press Ctrl+C to stop
 
@@ -122,14 +102,29 @@ Press Ctrl+C to stop
 Copy the current OTP code to clipboard and exit:
 
 ```bash
-otp-cli clip [token_id]
+/Applications/OTP\ Bar.app/Contents/MacOS/OTP\ Bar clip [token_id]
 ```
 
 If `token_id` is not specified, the token with the highest priority will be used.
 
 Example:
 ```bash
-$ otp-cli clip GitHub
+$ /Applications/OTP\ Bar.app/Contents/MacOS/OTP\ Bar clip GitHub
 Copied OTP for 'GitHub' to clipboard: 789012
+```
+
+### Creating an Alias
+
+For easier access, you can create an alias in your shell profile (e.g., `~/.zshrc` or `~/.bashrc`):
+
+```bash
+alias otp-cli='/Applications/OTP\ Bar.app/Contents/MacOS/OTP\ Bar'
+```
+
+Then you can use it simply as:
+
+```bash
+otp-cli show
+otp-cli clip GitHub
 ```
   

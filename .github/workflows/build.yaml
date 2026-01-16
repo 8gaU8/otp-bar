@@ -40,15 +40,7 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install # change this to npm or pnpm depending on which one you use
 
-      - name: Build CLI binary
-        run: |
-          cd src-tauri
-          cargo build --release --bin otp-cli
-          # Copy the binary to a known location for upload
-          cp target/release/otp-cli ../otp-cli-aarch64
-
       - uses: tauri-apps/tauri-action@v0.6.1
-        id: tauri_action
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -57,17 +49,3 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
-
-      - name: Get release info from tag
-        id: get_release
-        run: |
-          VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
-          TAG_NAME="app-v$VERSION"
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-
-      - name: Upload CLI binary to release
-        run: |
-          TAG_NAME="${{ steps.get_release.outputs.tag_name }}"
-          gh release upload "$TAG_NAME" otp-cli-aarch64 --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
