@@ -22,5 +22,35 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "cli": {
+      "description": "OTP Bar - One-Time Password Manager",
+      "args": [],
+      "subcommands": {
+        "show": {
+          "description": "Display OTP code with remaining time (refreshes until Ctrl+C)",
+          "args": [
+            {
+              "name": "token-id",
+              "index": 1,
+              "takesValue": true,
+              "required": false
+            }
+          ]
+        },
+        "clip": {
+          "description": "Copy OTP code to clipboard",
+          "args": [
+            {
+              "name": "token-id",
+              "index": 1,
+              "takesValue": true,
+              "required": false
+            }
+          ]
+        }
+      }
+    }
   }
 }

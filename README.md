@@ -69,4 +69,51 @@ See [example.config.toml](example.config.toml) for a template.
 ### Migrating from Old Configuration
 
 If you were using an older version of OTP Bar with individual token files, see [MIGRATION.md](MIGRATION.md) for instructions on migrating to the new TOML format.
+
+## CLI Usage
+
+OTP Bar now includes command-line tools for working with your OTP tokens.
+
+### Commands
+
+#### Show OTP with Live Updates
+
+Display an OTP code with the remaining time, refreshing every half second until you press Ctrl+C:
+
+```bash
+# Show OTP for a specific token
+otp-bar show <token-id>
+
+# Show OTP for the highest priority token
+otp-bar show
+```
+
+Example:
+```bash
+$ otp-bar show "Google Account"
+Token: Google Account
+Press Ctrl+C to stop
+
+OTP: 123456  Time: 25s
+```
+
+#### Copy OTP to Clipboard
+
+Copy an OTP code directly to your clipboard:
+
+```bash
+# Copy OTP for a specific token
+otp-bar clip <token-id>
+
+# Copy OTP for the highest priority token
+otp-bar clip
+```
+
+Example:
+```bash
+$ otp-bar clip GitHub
+OTP for 'GitHub' copied to clipboard: 789012
+```
+
+**Note**: If you don't specify a token ID, the CLI will automatically use the token with the highest priority (lowest priority number). If no priorities are set, it will use the first token alphabetically.
   
