@@ -40,6 +40,10 @@ fn list_token_ids() -> Vec<String> {
         .unwrap_or_default()
 }
 
+fn get_highest_priority_token() -> Option<String> {
+    list_token_ids().into_iter().next()
+}
+
 fn read_token(id: &str) -> Result<String, String> {
     let config_path = get_config_file_path();
     let config = Config::load(&config_path)?;
@@ -246,13 +250,113 @@ fn reload_menu(app: &AppHandle) {
     }
 }
 
+async fn handle_cli_command(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_cli::CliExt;
+
+    let cli_matches = app.cli().matches().map_err(|e| e.to_string())?;
+
+    if let Some(show_matches) = cli_matches.subcommand.as_ref().and_then(|s| {
+        if s.name == "show" {
+            Some(&s.matches)
+        } else {
+            None
+        }
+    }) {
+        // Handle 'show' subcommand
+        let token_id = show_matches
+            .args
+            .get("token-id")
+            .and_then(|v| v.value.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| get_highest_priority_token())
+            .ok_or_else(|| "No token ID provided and no tokens configured".to_string())?;
+
+        handle_show_command(&token_id).await?;
+        std::process::exit(0);
+    } else if let Some(clip_matches) = cli_matches.subcommand.as_ref().and_then(|s| {
+        if s.name == "clip" {
+            Some(&s.matches)
+        } else {
+            None
+        }
+    }) {
+        // Handle 'clip' subcommand
+        let token_id = clip_matches
+            .args
+            .get("token-id")
+            .and_then(|v| v.value.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| get_highest_priority_token())
+            .ok_or_else(|| "No token ID provided and no tokens configured".to_string())?;
+
+        handle_clip_command(&app, &token_id).await?;
+        std::process::exit(0);
+    }
+
+    Ok(())
+}
+
+async fn handle_show_command(token_id: &str) -> Result<(), String> {
+    let token = read_token(token_id)?;
+
+    // Setup Ctrl+C handler
+    let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let r = running.clone();
+
+    ctrlc::set_handler(move || {
+        r.store(false, std::sync::atomic::Ordering::SeqCst);
+    })
+    .map_err(|e| format!("Failed to set Ctrl+C handler: {}", e))?;
+
+    println!("Token: {}", token_id);
+    println!("Press Ctrl+C to stop\n");
+
+    while running.load(std::sync::atomic::Ordering::SeqCst) {
+        let otp = generate_otp(&token)?;
+        let remaining = get_otp_remaining_time();
+
+        // Clear the previous line and print new OTP
+        print!("\rOTP: {}  Time: {}s ", otp, remaining);
+        std::io::Write::flush(&mut std::io::stdout())
+            .map_err(|e| format!("Failed to flush stdout: {}", e))?;
+
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    println!("\n\nStopped.");
+    Ok(())
+}
+
+async fn handle_clip_command(app: &AppHandle, token_id: &str) -> Result<(), String> {
+    let token = read_token(token_id)?;
+    let otp = generate_otp(&token)?;
+
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    app.clipboard()
+        .write_text(otp.clone())
+        .map_err(|e| format!("Failed to write to clipboard: {}", e))?;
+
+    println!("OTP for '{}' copied to clipboard: {}", token_id, otp);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+    .plugin(tauri_plugin_cli::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
     .setup(|app| {
+        // Handle CLI commands
+        let app_handle = app.handle().clone();
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) = handle_cli_command(app_handle).await {
+                eprintln!("CLI error: {}", e);
+                std::process::exit(1);
+            }
+        });
+
         // Dockアイコンを非表示に
         #[cfg(target_os = "macos")]
         app.set_activation_policy(ActivationPolicy::Accessory);
