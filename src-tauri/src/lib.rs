@@ -17,6 +17,8 @@ mod qr;
 use config::Config;
 use otp::{generate_otp, get_otp_remaining_time, is_otp_in_warning_period};
 
+const CLI_REFRESH_INTERVAL_MS: u64 = 500;
+
 struct MenuState(Mutex<Menu<Wry>>);
 
 fn get_config_dir() -> PathBuf {
@@ -316,11 +318,11 @@ async fn handle_show_command(token_id: &str) -> Result<(), String> {
         let remaining = get_otp_remaining_time();
 
         // Clear the previous line and print new OTP
-        print!("\rOTP: {}  Time: {}s ", otp, remaining);
+        print!("\rOTP: {} | Time: {}s ", otp, remaining);
         std::io::Write::flush(&mut std::io::stdout())
             .map_err(|e| format!("Failed to flush stdout: {}", e))?;
 
-        tokio::time::sleep(Duration::from_millis(500)).await;
+        tokio::time::sleep(Duration::from_millis(CLI_REFRESH_INTERVAL_MS)).await;
     }
 
     println!("\n\nStopped.");
